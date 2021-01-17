@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://pwcappkit-static.azureedge.net/cdn/release/3.0.0/vendor.min.css">
+    <link rel="stylesheet" href=" https://pwcappkit-static.azureedge.net/cdn/release/3.0.0/appkit.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<?!= include('frontend/stylesheet'); ?>
+
+<body>
+
+    <div class="container">
+        <form id="myForm">
+            <p class="h4 mb-4 text-center">Generic Mail Merge V2</p>
+            </br>
+            <!-- text-center removed-->
+            <div id="result" class="h4 mb-4">
+            </div>
+            <div id="messages" class="h4 mb-4 text-danger">
+            </div>
+
+            <div id="mainContent">
+                <div class="row">
+                    <div id="LINK_PARAMETERS" class="form-group"></div>
+                    <div id="DATA_FILE_LINK"></div>
+                    <div id="NAMES_FILE_LINK"></div>
+                    <button id="btnExecute" type="button" class="a-btn a-btn-primary"
+                        onclick="processForm('btnExecute')">Execute</button>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-12">
+                        <label for="DATA_FILE_NAME">Data File *</label>
+                        <input type="text" class="form-control" id="DATA_FILE_NAME" name="DATA_FILE_NAME"
+                            onblur="getDataFileLink('DATA_FILE_LINK', this.value)" placeholder="Google SHEET file"
+                            required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-12">
+                        <label for="SUBJECT">Mail Subject *</label>
+                        <input type="text" class="form-control" id="SUBJECT" name="SUBJECT" required>
+                    </div>
+                </div>
+
+                <div id="parameters">
+                    <div class="row">
+                        <div class="form-group col-12">
+                            <label for="NAMES_FILE">Names File</label>
+                            <input type="text" class="form-control" id="NAMES_FILE" name="NAMES_FILE"
+                                onblur="getFileUrl('NAMES_FILE_LINK', 'Names File',this.value)"
+                                placeholder="Google DOC File">
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-12">
+                            <label for="TEMPLATE_FILE_NAME">Template File *</label>
+                            <input type="text" class="form-control" id="TEMPLATE_FILE_NAME" name="TEMPLATE_FILE_NAME"
+                                required placeholder="Google DOC HTML File">
+                        </div>
+
+                    </div>
+                    <div class="row">
+
+                        <div class="form-group">
+                            <label for="SENDER_NAME">Sender Name</label>
+                            <input type="text" class="form-control" id="SENDER_NAME" name="SENDER_NAME">
+                        </div>
+                        <div class="form-group">
+                            <label for="SENDER_TITLE">Sender Title</label>
+                            <input type="text" class="form-control" id="SENDER_TITLE" name="SENDER_TITLE">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="OUTPUT_FOLDER_NAME">Output Folder *</label>
+                            <input type="text" class="form-control" id="OUTPUT_FOLDER_NAME" name="OUTPUT_FOLDER_NAME"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="COL_NAMES">Name of 'Names' column *</label>
+                            <input type="text" class="form-control" id="COL_NAMES" name="COL_NAMES" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                    </div>
+
+                </div>
+            </div>
+    </div>
+    </form>
+    <div id="modal"></div>
+
+    <div class="footer-wrapper flex-shrink-0 a-p-10 text-center a-bg-content">
+        <div class="a-footer">© 2020 PwC. PwC refers to the PwC network and/or one or more of its member
+            firms,
+            each of which is a separate legal entity. Please see www.pwc.com/structure for further details.
+        </div>
+    </div>
+</body>
+<script>
+    var lastDiv = "";
+    var urlDataFile = "";
+
+
+    function setValue(fieldId, value) {
+        var x = document.forms["myForm"][fieldId];
+        if (x != undefined)
+            x.value = value;
+
+    }
+
+    function getValue(fieldId) {
+        var x = document.forms["myForm"][fieldId];
+        if (x != undefined)
+            return "";
+        else return x.value;
+    }
+
+    function showDiv(divId, value)
+    {
+        console.log("showdiv() "+ divId);
+        let div = document.getElementById(divId);
+        if ( div != undefined )
+        {
+            if ( value )
+                div.style.display = "block";
+            else 
+                div.style.display = "none";
+        }
+        else console.log("div not found");
+    }
+
+
+    function toggleParameters() {
+        if (divParameters == undefined)
+            divParameters = document.getElementById("parameters");
+        if (divParameters.style.display === "none") {
+            divParameters.style.display = "block";
+        } else {
+            divParameters.style.display = "none";
+        }
+    }
+
+    function onSuccess(json) {
+        let pars = JSON.parse(json);
+
+        setValue("DATA_FILE_NAME", pars.DATA_FILE_NAME);
+        setValue("NAMES_FILE", pars.NAMES_FILE);
+        setValue("TEMPLATE_FILE_NAME", pars.TEMPLATE_FILE_NAME);
+        setValue("RESULT_TEMPLATE_FILE_NAME", pars.RESULT_TEMPLATE_FILE_NAME);
+        setValue("OUTPUT_FOLDER_NAME", pars.OUTPUT_FOLDER_NAME);
+        setValue("SUBJECT", pars.SUBJECT);
+        //setValue("SENDER_MAIL", pars.SENDER_MAIL);
+        setValue("SENDER_NAME", pars.SENDER_NAME);
+        setValue("SENDER_TITLE", pars.SENDER_TITLE);
+        //setValue("STAKEHOLDERS_NAMES", pars.STAKEHOLDERS_NAMES);
+        setValue("COL_NAMES", pars.COL_NAMES);
+
+        //TODO: GET THE URL WHEN RETRIEVING PARAMETERS
+        console.log(`enabling buttons: ${pars.DATA_FILE_NAME} ${pars.NAMES_FILE}`);
+        getDataFileLink("DATA_FILE_LINK", pars.DATA_FILE_NAME);
+        getFileUrl('NAMES_FILE_LINK', 'Names File', pars.NAMES_FILE);
+
+        let divLinkParameters = document.getElementById("LINK_PARAMETERS");
+        let html = `<a href="${pars.PARAMETERS_URL}">Edit Parameters File</a>`;
+        divLinkParameters.innerHTML = html;
+        showMessage("Fields with * are required.");
+
+    }
+
+
+    function openParameters() {
+        if (pars.PARAMETERS_URL.length > 0)
+            window.open(pars.PARAMETERS_URL);
+    }
+
+    function openBrowser(url) {
+        if (url.length > 0)
+            window.open(url);
+    }
+
+    function onSuccessGetDataLink(url) {
+        url = url.trim();
+        if (lastDiv == "DATA_FILE_LINK") {
+            urlDataFile = url;
+            if (url.length == 0) {
+                document.forms["myForm"]["DATA_FILE_NAME"].value = "";
+                showError("Data file not found.");
+                return;
+            }
+        }
+
+        if (url.length > 0) {
+            let div = document.getElementById(lastDiv);
+            if (div != undefined) {
+                //div.innerHTML = `<a href="${url} target="blank">Open File</a>`;
+                div.innerHTML = `<button class="a-btn a-btn-secondary" onclick="openBrowser('${url}')">Open ${btnTitle}</button>`;
+            }
+        }
+    }
+
+    let btnTitle = "";
+    function getDataFileLink(div, fileName) {
+        btnTitle = "Data File";
+        if (fileName.length > 0) {
+            lastDiv = div;
+            if (fileName.toLowerCase().indexOf("http") == 0)
+                onSuccessGetDataLink(fileName);
+            else
+                google.script.run.withSuccessHandler(onSuccessGetDataLink)
+                    .getCreateDataFile(fileName);
+        }
+
+    }
+
+    function getFileUrl(div, btnText, fileName) {
+        btnTitle = btnText;
+        if (fileName.length > 0) {
+            lastDiv = div;
+            if (fileName.toLowerCase().indexOf("http" == 0))
+                onSuccessGetDataLink(fileName);
+            else
+                google.script.run.withSuccessHandler(onSuccessGetDataLink).getUrl(fileName);
+        }
+
+    }
+
+    function loadColumnNames() {
+        google.script.run.withSuccessHandler(onSuccessGetColumnNames)
+            .getColumnNamesSelects();
+
+    }
+
+    function preventFormSubmit() {
+
+        //todo: disable for now
+        // var forms = document.querySelectorAll('form');
+        // for (var i = 0; i < forms.length; i++) {
+        //     forms[i].addEventListener('submit', function (event) {
+        //         event.preventDefault();
+        //     });
+        // }
+
+        google.script.run.withSuccessHandler(onSuccess)
+            .loadSettings();
+
+
+    }
+
+    var pars = {
+        DATA_FILE_NAME: "",
+        NAMES_FILE: "",
+        TEMPLATE_FILE_NAME: "",
+        RESULT_TEMPLATE_FILE_NAME: "",
+        OUTPUT_FOLDER_NAME: "",
+        SUBJECT: "",
+        SENDER_MAIL: "",
+        SENDER_NAME: "",
+        SENDER_TITLE: "",
+        STAKEHOLDERS_NAMES: "",
+        TEST_MODE: false,
+        COL_NAMES: "names",
+        PARAMETERS_URL: ""
+    }
+
+    var divMergeData;
+    var divParameters;
+    var divModal;
+    var lastButton;
+
+
+    function callback(json) {
+
+        try {
+            console.log("callback()", json);
+            let response = JSON.parse(json);
+            console.log("after process: response:");
+            console.log(response);
+            if (response.result == 200) {
+                //document.forms["myForm"].reset();
+                showMessage("Process finished execution");
+                if ( response.html.length > 0 )
+                {
+                    let div = document.getElementById("result");
+                    div.innerHTML = response.html[0].value;
+                }
+                //showDiv("mainContent",true);
+                //disableButtons(false);   
+
+                // for (var i = 0; i < response.html.length; i++) {
+                //     console.log(`key:${response.html[i].key}`);
+                //     let div = document.getElementById(response.html[i].key);
+                //     console.log("div", div);
+                //     if (div != undefined)
+                //         div.innerHTML = response.html[i].value;
+                //     else
+                //     {
+                //         console.log(`div ${response.html[i].key} is invalid`);
+                //         showError(`Can not set div [${response.html[i].key}]`);
+                //     }
+                // }
+
+                // if (response.messages.length > 0) {
+                //     let div = document.getElementById("messages");
+                //     if (div != undefined) {
+                //         let msg = "";
+                //         for (var i = 0; i < response.messages.length; i++) {
+                //             msg = `${msg}</br>${response.messages[i]}`;
+                //         }
+                //         div.innerHTML = msg;
+                //     }
+                // }
+            }
+            else if (response.result == 500) {
+            }
+        }
+        catch (ex) {
+            showError("Process was completed, but error showing results: " + ex.message);
+        }
+       
+    }
+
+    function closeResults(){
+        showDiv("mainContent",true);
+        disableButtons(false);        
+    }
+
+    function disableButtons(state) {
+        const buttons = document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].disabled = state;
+        };
+
+    }
+
+    function showMessage(msg) {
+        let div = document.getElementById("result");
+        div.innerHTML = `<h4 class="text-info">${msg}</h4`;
+    }
+
+    function showError(msg) {
+        let div = document.getElementById("result");
+        div.innerHTML = `<h4 class="text-danger">${msg}</h4`;
+    }
+
+
+    function getCurrentText(btn) {
+        let currentText = document.querySelector(`#${btn}`).innerHTML;
+        return currentText;
+    }
+
+    function setCurrentText(btn, text) {
+        document.querySelector(`#${btn}`).innerHTML = text;
+    }
+
+
+    function changeButtonText(btn, text) {
+        let changed = false;
+        let currentText = document.querySelector(`#${btn}`).innerHTML;
+        if (currentText.toLocaleLowerCase().indexOf(text.toLocaleLowerCase()) < 0) {
+            currentText = `${text} ${currentText}`;
+            document.querySelector(`#${btn}`).innerHTML = currentText;
+            changed = true;
+        }
+        return changed;
+    }
+
+    function testMerge(btn) {
+        changeButtonText("btnExecute", "Execute");
+
+        console.log("testMerge", document.forms["myForm"]);
+        if (document.forms["myForm"].checkValidity()) {
+            if (!changeButtonText(btn, "Confirm ")) {
+                showMessage(`<h4 class="text-success'>Testing Mail Merge Process...</h4>`);
+                modalResponse = false;
+                setCurrentText("btnExecute", "Execute");
+
+                if (urlDataFile.length > 0)
+                    window.open(urlDataFile);
+
+                //google.script.run.withSuccessHandler(callback).testMerge(document.forms["myForm"]);
+                google.script.run.withFailureHandler(myFailureHandler).withSuccessHandler(callback).testMerge(document.forms["myForm"]);
+
+            }
+        }
+        else
+            showError("Some fields are required");
+
+    }
+
+    function myFailureHandler(error) {
+        console.log("myFailureHandler", error);
+    }
+
+    function processForm(btn) {
+        if (document.forms["myForm"].checkValidity()) {
+            if (!changeButtonText(btn, "Confirm ")) {
+
+                showMessage("Executing Mail Merge Process...");
+                disableButtons(true);
+                setCurrentText("btnExecute", "Execute");
+                showDiv("mainContent",false);
+
+                //if (urlDataFile.length > 0)
+                //    window.open(urlDataFile);
+
+                //google.script.run.withSuccessHandler(callback).processForm(document.forms["myForm"]);
+                google.script.run.withFailureHandler(myFailureHandler).withSuccessHandler(callback).processForm(document.forms["myForm"]);
+            }
+        }
+        else {
+            showError("Some fields are required");
+        }
+    }
+
+
+    //submit removed onsubmit="handleFormSubmit(this)
+    function handleFormSubmit(formObject) {
+        console.log("calling ProcessFOrm()", formObject);
+        disableButtons(true);
+
+        //if (urlDataFile.length > 0)
+        //    window.open(urlDataFile);
+
+        google.script.run.withSuccessHandler(callback).processForm(formObject);
+    }
+
+    window.addEventListener('load', preventFormSubmit);
+
+</script>
+
+</html>
