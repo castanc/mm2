@@ -1,12 +1,14 @@
+import { FileInfo } from "../Models/FileInfo";
 import { GSResponse } from "../Models/GSResponse";
 import { P } from "../Models/Parameters";
 import { GSLog } from "./GSLog";
 import { Service } from "./service";
+import { SysLog } from "./SysLog";
 import { Utils } from "./Utils";
 
 
-function testMailMerge()
-{
+
+function testMailMerge() {
     let sv = new Service();
     let p = sv.loadParameters();
     P.testMode = true;
@@ -14,20 +16,20 @@ function testMailMerge()
     Logger.log(result);
 }
 
-function testhardCoded() {
-    let sv = new Service();
-    let p = new P();
-    p.addParameter(P.DATA_FILE_NAME, "userfile");
-    p.addParameter(P.TEMPLATE_FILE_NAME, "MailTemplate");
-    p.addParameter(P.OUTPUT_FOLDER_NAME, "MailMerge2_Output");
-    p.addParameter("SENDER_NAME", "Cesar Alfredo Castano");
-    p.addParameter("SENDER_TITLE", "Developer");
-    p.addParameter(P.SUBJECT, "Test Mail");
-    P.testMode = true;
-    let result = sv.mailMerge(p);
-    Logger.log(result);
-    return result;
+
+function testGetFileInfo() {
+    let result = Utils.getFileInfo("Automatizacion");
+   
+    result = Utils.getFileInfo("https://docs.google.com/spreadsheets/d/1g7-7Tem8TDkuoGbYx_33sLvM8rDYCetPxx3ix7j9R7c/edit#gid=0");
+
+    result = Utils.getFileInfo("https://docs.google.com/document/d/1moWklfdcVr8euhpn3gREVnYfqkNi1EWZx5Mr9KZnNGo/edit?usp=sharing");
+
+
+    result = Utils.getFileInfo("1g7-7Tem8TDkuoGbYx_33sLvM8rDYCetPxx3ix7j9R7c/edit#gid=0");
+
+
 }
+
 
 function testDirectoryAPI() {
     //todo: needs to enable directory api
@@ -45,17 +47,44 @@ function loadSettings() {
     return JSON.stringify(pars);
 }
 
-function getColumnNames() {
-    let sv = new Service();
-}
 
 function getUrl(fileName) {
-    return Utils.getUrl(fileName);
+
+    let fi = Utils.getFileInfo(fileName);
+    if ( fi != null )
+    {
+        if ( fileName.toLowerCase().indexOf("http")==0)
+            fi.url = fileName;
+            return JSON.stringify(fi);
+    }
+    else return `{url:""}`;
 }
 
-function getCreateDataFile(fileName) {
+function getFileInfos(dataFile,namesFile,templateFile)
+{
     let sv = new Service();
-    return sv.getUrlDataFile(fileName);
+    let result = sv.getFileInfos(dataFile,namesFile,templateFile);
+    return JSON.stringify(result);
+}
+
+function getCreateDataFile(controlId, labelId, controlText, fileName) {
+
+    let result = null;
+    try {
+        result = Utils.getFileInfo(fileName);
+        if (result != null) {
+            result.controlId = controlId;
+            result.controlText = controlText;
+            result.labelId = labelId;
+        }
+    }
+    catch (ex) {
+        return `{error: "${ex.message}" }`
+    }
+    return JSON.stringify(result);
+
+    //let sv = new Service();
+    //return sv.getUrlDataFile(fileName);
 
 }
 
@@ -70,23 +99,23 @@ function include(filename) {
 
 
 function testMerge(formObject) {
-        let sv = new Service();
-        let result: GSResponse;
-        let html = "";
-        let p = new P();
-        try {
-            p.setParsObject(formObject);
-            P.testMode = true;
-            Logger.log("parameters", p);
-            result = sv.mailMerge(p);
-        }
-        catch (ex) {
-            Logger.log("Exception. parameters received:");
-            Logger.log(p);
-            Logger.log(ex);
-            result.addError("error",`Exception at testMerge: ${ex.message}`);
-        }
-        return JSON.stringify(result);
+    let sv = new Service();
+    let result: GSResponse;
+    let html = "";
+    let p = new P();
+    try {
+        p.setParsObject(formObject);
+        P.testMode = true;
+        Logger.log("parameters", p);
+        result = sv.mailMerge(p);
+    }
+    catch (ex) {
+        Logger.log("Exception. parameters received:");
+        Logger.log(p);
+        Logger.log(ex);
+        result.addError("error", `Exception at testMerge: ${ex.message}`);
+    }
+    return JSON.stringify(result);
 }
 
 
@@ -116,6 +145,27 @@ function doGet(e) {
     return HtmlService.createTemplateFromFile('frontend/Parameters_AppKit').evaluate();
 }
 
+
+function getTemplateText(controlId, labelId, controlText, fileName)
+{
+    let result = null;
+    try {
+        result = Utils.getFileInfo(fileName);
+        if (result != null) {
+            result.controlId = controlId;
+            result.controlText = controlText;
+            result.labelId = labelId;
+;
+            let sv = new Service();
+            result.content = sv.getTemplateText(fileName);
+            return JSON.stringify(result);
+        }
+    }
+    catch (ex) {
+        return `{url: "" }`
+    }
+
+}
 
 
 
