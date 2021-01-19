@@ -81,6 +81,8 @@ export class Service {
 
         let folderName = parameters.getParameter(P.FOLDER_NAME);
         let folder = Utils.getCreateFolder(folderName);
+        //P.FOLDER_ID = folder.getId();
+        //P.FOLDER_URL = `https://drive.google.com/drive/folders/${P.FOLDER_ID}`;
 
         let spreadSheet = Utils.getCreateSpreadSheet(folder, "Parameters", "Parameters");
 
@@ -170,6 +172,7 @@ export class Service {
                     else if (Utils.ValidateEmail(mail)) {
                         mv.mails.push(mail);
                         mv.validMails = `${mv.validMails}\n${mail}`;
+                        mv.names = `${mv.names}\n${list[i]}`;
                     }
                     else {
                         mv.error = "Invalid Mail";
@@ -180,7 +183,9 @@ export class Service {
                 }
                 else {
                     mv.mails.push(list[i]);
-                    mv.validMails = `${mv.validMails}\n${list[i]}`
+                    mv.validMails = `${mv.validMails}\n${list[i]}`;
+                    mv.names = `${mv.names}\n${Utils.getNameFromEmail(list[i])}`;
+                    
 
                     //todo: needs to enable directory api
                     //var user = AdminDirectory.Users.get(list[i]);
@@ -447,7 +452,7 @@ export class Service {
                     if (mv.result) {
                         rangeData.getCell(i, P.COLN_RESOLVED_MAIL).setValue(mv.validMails);
                         rangeData.getCell(i, P.COLN_STATUS).setValue("");
-                        //rangeData.getCell(i, P.COLN_RESULT).setValue("OK MAIL");
+                        //rangeData.getCell(i, P.COLN_NAMES).setValue(mv.names);
                         r.OK_LINES++;
                     }
                     else {
