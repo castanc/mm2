@@ -3,10 +3,19 @@
 
 <head>
     <base target="_top">
-    <link rel="stylesheet" href="https://pwcappkit-static.azureedge.net/cdn/release/3.0.0/vendor.min.css">
-    <link rel="stylesheet" href=" https://pwcappkit-static.azureedge.net/cdn/release/3.0.0/appkit.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- 
+        https://www.w3schools.com/bootstrap4/bootstrap_get_started.asp        
+    -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Popper JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <?!= include('frontend/stylesheet'); ?>
 
@@ -15,54 +24,50 @@
     <div class="container">
         <form id="myForm">
             <p class="h4 mb-4 text-center">Generic Mail Merge V2</p>
-            </br>
             <!-- text-center removed-->
-            <div id="result" class="h4 mb-4">
-            </div>
-            <div id="messages" class="h4 mb-4 text-danger">
-            </div>
-
+            <div id="result" class="h4 mb-4"></div>
+            <div id="messages" class="h4 mb-4 text-danger"></div>
             <div id="mainContent">
                 <div class="row">
                     <div id="LINK_PARAMETERS" class="form-group"></div>
                     <div id="DATA_FILE_LINK"></div>
                     <div id="NAMES_FILE_LINK"></div>
-                    <button id="btnExecute" type="button" class="a-btn a-btn-primary"
+                    <div id="TEMPLATE_LINK"></div>
+                    <button id="btnExecute" type="button" class="btn btn-primary"
                         onclick="processForm('btnExecute')">Execute</button>
                 </div>
 
                 <div class="row">
                     <div class="form-group col-12">
-                        <label for="DATA_FILE_NAME">Data File *</label>
+                        <label id="L_DATA_FILE_NAME" for="DATA_FILE_NAME">Data File *:</label>
                         <input type="text" class="form-control" id="DATA_FILE_NAME" name="DATA_FILE_NAME"
-                            onblur="getDataFileLink('DATA_FILE_LINK', this.value)" placeholder="Google SHEET file"
-                            required>
+                            onblur="getFileInfo('DATA_FILE_LINK', 'L_DATA_FILE_NAME', 'Data File *', this.value)"
+                            placeholder="Google SHEET file" required>
                     </div>
                 </div>
                 <div class="row">
                     <div class="form-group col-12">
-                        <label for="SUBJECT">Mail Subject *</label>
-                        <input type="text" class="form-control" id="SUBJECT" name="SUBJECT" required>
+                        <label id="L_NAMES_FILE" for="NAMES_FILE">Names File</label>
+                        <input type="text" class="form-control" id="NAMES_FILE" name="NAMES_FILE"
+                            onblur="getFileInfo('NAMES_FILE_LINK', 'L_NAMES_FILE','Names File:',this.value)"
+                            placeholder="Google DOC File">
                     </div>
                 </div>
 
                 <div id="parameters">
                     <div class="row">
                         <div class="form-group col-12">
-                            <label for="NAMES_FILE">Names File</label>
-                            <input type="text" class="form-control" id="NAMES_FILE" name="NAMES_FILE"
-                                onblur="getFileUrl('NAMES_FILE_LINK', 'Names File',this.value)"
-                                placeholder="Google DOC File">
+                            <label ID="L_TEMPLATE_FILE_NAME" for="TEMPLATE_FILE_NAME">Template File *:</label>
+                            <input type="text" class="form-control" id="TEMPLATE_FILE_NAME" name="TEMPLATE_FILE_NAME"
+                                required placeholder="Google DOC HTML File"
+                                onblur="getTemplateText('TEMPLATE_LINK', 'L_TEMPLATE_FILE_NAME', 'Template File *', this.value)">
                         </div>
-
                     </div>
                     <div class="row">
                         <div class="form-group col-12">
-                            <label for="TEMPLATE_FILE_NAME">Template File *</label>
-                            <input type="text" class="form-control" id="TEMPLATE_FILE_NAME" name="TEMPLATE_FILE_NAME"
-                                required placeholder="Google DOC HTML File">
+                            <label for="SUBJECT">Mail Subject *</label>
+                            <input type="text" class="form-control" id="SUBJECT" name="SUBJECT" required>
                         </div>
-
                     </div>
                     <div class="row">
 
@@ -74,30 +79,20 @@
                             <label for="SENDER_TITLE">Sender Title</label>
                             <input type="text" class="form-control" id="SENDER_TITLE" name="SENDER_TITLE">
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="OUTPUT_FOLDER_NAME">Output Folder *</label>
-                            <input type="text" class="form-control" id="OUTPUT_FOLDER_NAME" name="OUTPUT_FOLDER_NAME"
-                                required>
-                        </div>
-
                         <div class="form-group">
                             <label for="COL_NAMES">Name of 'Names' column *</label>
                             <input type="text" class="form-control" id="COL_NAMES" name="COL_NAMES" required>
                         </div>
                     </div>
-                    <div class="row">
-                    </div>
-
                 </div>
             </div>
     </div>
     </form>
-    <div id="modal"></div>
 
-    <div class="footer-wrapper flex-shrink-0 a-p-10 text-center a-bg-content">
-        <div class="a-footer">© 2020 PwC. PwC refers to the PwC network and/or one or more of its member
+    <div id="template" class="container h4 mb-4"></div>
+
+    <div class="footer-wrapper flex-shrink-0 p-10 text-center bg-content">
+        <div class="footer">© 2020 PwC. PwC refers to the PwC network and/or one or more of its member
             firms,
             each of which is a separate legal entity. Please see www.pwc.com/structure for further details.
         </div>
@@ -122,15 +117,13 @@
         else return x.value;
     }
 
-    function showDiv(divId, value)
-    {
-        console.log("showdiv() "+ divId);
+    function showDiv(divId, value) {
+        console.log("showdiv() " + divId);
         let div = document.getElementById(divId);
-        if ( div != undefined )
-        {
-            if ( value )
+        if (div != undefined) {
+            if (value)
                 div.style.display = "block";
-            else 
+            else
                 div.style.display = "none";
         }
         else console.log("div not found");
@@ -154,7 +147,7 @@
         setValue("NAMES_FILE", pars.NAMES_FILE);
         setValue("TEMPLATE_FILE_NAME", pars.TEMPLATE_FILE_NAME);
         setValue("RESULT_TEMPLATE_FILE_NAME", pars.RESULT_TEMPLATE_FILE_NAME);
-        setValue("OUTPUT_FOLDER_NAME", pars.OUTPUT_FOLDER_NAME);
+        //setValue("OUTPUT_FOLDER_NAME", pars.OUTPUT_FOLDER_NAME);
         setValue("SUBJECT", pars.SUBJECT);
         //setValue("SENDER_MAIL", pars.SENDER_MAIL);
         setValue("SENDER_NAME", pars.SENDER_NAME);
@@ -164,11 +157,16 @@
 
         //TODO: GET THE URL WHEN RETRIEVING PARAMETERS
         console.log(`enabling buttons: ${pars.DATA_FILE_NAME} ${pars.NAMES_FILE}`);
-        getDataFileLink("DATA_FILE_LINK", pars.DATA_FILE_NAME);
-        getFileUrl('NAMES_FILE_LINK', 'Names File', pars.NAMES_FILE);
+
+
+        getFileInfo("DATA_FILE_LINK", "L_DATA_FILE_NAME", "Data File *", pars.DATA_FILE_NAME);
+
+        getFileInfo('NAMES_FILE_LINK', 'L_NAMES_FILE', 'Names File', pars.NAMES_FILE);
+
+        getTemplateText('TEMPLATE_LINK', 'L_TEMPLATE_FILE_NAME', 'Template File *', pars.TEMPLATE_FILE_NAME);
 
         let divLinkParameters = document.getElementById("LINK_PARAMETERS");
-        let html = `<a href="${pars.PARAMETERS_URL}">Edit Parameters File</a>`;
+        let html = `<a href="${pars.PARAMETERS_URL}">[Edit Parameters File]</a>`;
         divLinkParameters.innerHTML = html;
         showMessage("Fields with * are required.");
 
@@ -181,42 +179,115 @@
     }
 
     function openBrowser(url) {
+        console.log("openBrowser()");
+        console.log(url);
         if (url.length > 0)
             window.open(url);
     }
 
-    function onSuccessGetDataLink(url) {
-        url = url.trim();
-        if (lastDiv == "DATA_FILE_LINK") {
-            urlDataFile = url;
-            if (url.length == 0) {
-                document.forms["myForm"]["DATA_FILE_NAME"].value = "";
-                showError("Data file not found.");
-                return;
-            }
-        }
+    //aqui es fileinfo
+    var fi;
+    var fileInfos = [];
+    var fiDataIndex = -1;
+    var fiNamesIndex = -1;
+    var fiTemplateIndex = -1;
 
-        if (url.length > 0) {
-            let div = document.getElementById(lastDiv);
-            if (div != undefined) {
-                //div.innerHTML = `<a href="${url} target="blank">Open File</a>`;
-                div.innerHTML = `<button class="a-btn a-btn-secondary" onclick="openBrowser('${url}')">Open ${btnTitle}</button>`;
-            }
+    function onSuccessGetFileInfo(json) {
+        fi = JSON.parse(json);
+        console.log("onSuccessGetFileInfo()", fi);
+        if (fi != null && fi.url.length > 0) {
+            let fileData = "";
+            let dir = "";
+            if (fi.parentDirs.length > 0)
+                dir = fi.parentDirs[0];
+
+            fileData = `${fi.controlText} ([${dir}]/${fi.name}) ${fi.dateModified}`;
+            console.log("fileData:", fileData);
+
+            let currentText = document.querySelector(`#${fi.labelId}`).innerHTML;
+            document.querySelector(`#${fi.labelId}`).innerHTML = fileData;
+
+            let fieldId = fi.controlId.substring(2);
+            console.log("fieldId:", fieldId);
+            setValue(fieldId, fi.url);
+
+            let btn = `<button class="btn btn-secondary" onclick="openBrowser('${fi.url}')">${fi.controlText.replace("*", "")}</button>`;
+
+            let lnk = `<a href="${fi.url}">[${fi.controlText.replace("*", "")}]</a>`;
+
+            let div = document.getElementById(fi.controlId);
+            if (div != undefined)
+                div.innerHTML = `${lnk}`;
+        }
+    }
+
+    let templateText = "";
+
+    function showTemplate() {
+        if (templateText.length > 0) {
+            let div = document.getElementById("result");
+            div.innerHTML = templateText;
+        }
+    }
+    function onSuccessGetFileInfo2(json) {
+        fi = JSON.parse(json);
+        console.log("onSuccessGetFileInfo()", fi);
+        if (fi != null && fi.url.length > 0) {
+            let fileData = "";
+            let dir = "";
+            if (fi.parentDirs.length > 0)
+                dir = fi.parentDirs[0];
+
+            //let div = document.getElementById("template");
+            //div.innerHTML = fi.content;
+
+            fileData = `${fi.controlText} ([${dir}]/${fi.name}) ${fi.dateModified}`;
+            console.log("fileData:", fileData);
+
+            let currentText = document.querySelector(`#${fi.labelId}`).innerHTML;
+            document.querySelector(`#${fi.labelId}`).innerHTML = fileData;
+
+            let fieldId = fi.controlId.substring(2);
+            console.log("fieldId:", fieldId);
+            setValue(fieldId, fi.url);
+
+            let btn = `<button class="btn btn-secondary" onclick="showDiv("template",true);">${fi.controlText.replace("*", "")}</button>`;
+
+            let lnk = `<a href="${fi.url}">[${fi.controlText.replace("*", "")}]</a>`;
+
+            //  div = document.getElementById(fi.controlId);
+            //   if (div != undefined)
+            //   div.innerHTML = `${btn}`;
         }
     }
 
     let btnTitle = "";
-    function getDataFileLink(div, fileName) {
-        btnTitle = "Data File";
-        if (fileName.length > 0) {
+    function getFileInfo(div, labelId, text, fileName) {
+        if (fileName.toLowerCase().indexOf("http") == 0) {
+            console.log(`getFileInfo() ${div} ${text} ${fileName}`)
+            btnTitle = text;
             lastDiv = div;
-            if (fileName.toLowerCase().indexOf("http") == 0)
-                onSuccessGetDataLink(fileName);
-            else
-                google.script.run.withSuccessHandler(onSuccessGetDataLink)
-                    .getCreateDataFile(fileName);
+            if (fileName.length > 0) {
+                //onSuccessGetDataLink old Handler
+                google.script.run.withSuccessHandler(onSuccessGetFileInfo)
+                    .getCreateDataFile(div, labelId, text, fileName);
+            }
         }
+        else showError("Only urls are valid for files");
+    }
 
+    function getTemplateText(div, labelId, text, fileName) {
+        if (fileName.toLowerCase().indexOf("http") == 0) {
+            console.log(`getFileInfo() ${div} ${text} ${fileName}`)
+            btnTitle = text;
+            lastDiv = div;
+            if (fileName.length > 0) {
+                //onSuccessGetDataLink old Handler
+                google.script.run.withSuccessHandler(onSuccessGetFileInfo2)
+                    .getTemplateText(div, labelId, text, fileName);
+            }
+        }
+        else showError("Only urls are valid for files");
     }
 
     function getFileUrl(div, btnText, fileName) {
@@ -285,8 +356,7 @@
             if (response.result == 200) {
                 //document.forms["myForm"].reset();
                 showMessage("Process finished execution");
-                if ( response.html.length > 0 )
-                {
+                if (response.html.length > 0) {
                     let div = document.getElementById("result");
                     div.innerHTML = response.html[0].value;
                 }
@@ -323,12 +393,12 @@
         catch (ex) {
             showError("Process was completed, but error showing results: " + ex.message);
         }
-       
+
     }
 
-    function closeResults(){
-        showDiv("mainContent",true);
-        disableButtons(false);        
+    function closeResults() {
+        showDiv("mainContent", true);
+        disableButtons(false);
     }
 
     function disableButtons(state) {
@@ -363,7 +433,7 @@
     function changeButtonText(btn, text) {
         let changed = false;
         let currentText = document.querySelector(`#${btn}`).innerHTML;
-        if (currentText.toLocaleLowerCase().indexOf(text.toLocaleLowerCase()) < 0) {
+        if (currentText.toLowerCase().indexOf(text.toLowerCase()) < 0) {
             currentText = `${text} ${currentText}`;
             document.querySelector(`#${btn}`).innerHTML = currentText;
             changed = true;
@@ -405,7 +475,8 @@
                 showMessage("Executing Mail Merge Process...");
                 disableButtons(true);
                 setCurrentText("btnExecute", "Execute");
-                showDiv("mainContent",false);
+                showDiv("mainContent", false);
+                showDiv("template", false);
 
                 //if (urlDataFile.length > 0)
                 //    window.open(urlDataFile);
