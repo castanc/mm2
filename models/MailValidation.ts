@@ -4,6 +4,7 @@ export class MailValidation{
     invalidMails: string = "";
     totalInvalidNames: number = 0;
     totalInvalidMails: number = 0;
+    names: string = "";
     mails = new Array<string>();
     updatedNames = new Array<string>();
     validMails: string = "";
