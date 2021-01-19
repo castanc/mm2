@@ -34,6 +34,8 @@ export class P{
     static testMode: boolean = false;
     static PARAMETERS_URL = "";
     static mainParameters: string  = "DATA_FILE_NAME,NAMES_FILE,TEMPLATE_FILE_NAME,RESULT_TEMPLATE_FILE_NAME,FOLDER_NAME,FOLDER_NAME,OUTPUT_FOLDER_NAME";
+    static FOLDER_ID = "";
+    static FOLDER_URL = "";
 
     parameters: Array<KeyValuePair<string,string>> = new Array<KeyValuePair<string,string>>();
 
@@ -101,10 +103,6 @@ export class P{
         this.addParameter("SENDER_TITLE",formObject.SENDER_TITLE);
         this.addParameter("COL_NAMES",formObject.COL_NAMES);
         //this.addParameter("STAKEHOLDERS_NAMES",formObject.STAKEHOLDERS_NAMES);
-        if ( formObject.SAVE_PARAMETERS )
-        {
-
-        }
     }
 
     getParsObject(){
@@ -121,6 +119,9 @@ export class P{
         op[P.COL_STATUS] = P.COL_STATUS;
         op[P.COL_INVALID_MAILS] = P.COL_INVALID_MAILS
         op[P.COL_INVALID_NAMES] = P.COL_INVALID_NAMES;
+        op["FOLDER_ID"] = P.FOLDER_ID;
+        op["FOLDER_URL"] = P.FOLDER_URL;
+
         return op;
     }
 }
