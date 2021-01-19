@@ -42,19 +42,41 @@ export class Utils {
         return text;
     }
 
+
+    static getNameFromEmail(email):string{
+        let name = email;
+        let index = name.indexOf("@");
+        if ( index > 0 )
+        {
+            name = name.substring(0,index);
+            let parts = name.split('.');
+            name = "";
+            for(var i=0; i< parts.length; i++)
+            {
+                parts[i] = parts[i].trim;
+                if ( parts[i].length > 0 )
+                {
+                    name = `${name}${parts[i].substring(0,1).toUpperCase()}${parts[i].substring(1)} `;
+                }
+            }
+        }
+        return name;
+    }
     //https://stackoverflow.com/questions/16840038/easiest-way-to-get-file-id-from-url-on-google-apps-script
     static getIdFromUrl(url) {
         return url.match(/[-\w]{25,}/);
     }
 
     static getFileInfo(name) {
-        let fi = null;
+        let fi = new FileInfo(null);
+        
         let id = this.getIdFromUrl(name)
-        if ( id != null ) {
-            let file = DriveApp.getFileById(id);
+        //todo: test
+        Logger.log("getFileInfo()",id);
+        if ( id != null && id.length > 0) {
+            let file = DriveApp.getFileById(id[0]);
             if (file != undefined) {
                 fi = new FileInfo(file);
-                fi.nameUrl = name;
             }
         }
         else
