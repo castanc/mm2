@@ -1,0 +1,395 @@
+<script>
+    var lastDiv = "";
+    var urlDataFile = "";
+    var fi;
+    var fileInfos = [];
+    var fiDataIndex = -1;
+    var fiNamesIndex = -1;
+    var fiTemplateIndex = -1;
+    let templateText = "";
+    var pars = {
+        DATA_FILE_NAME: "",
+        NAMES_FILE: "",
+        TEMPLATE_FILE_NAME: "",
+        RESULT_TEMPLATE_FILE_NAME: "",
+        OUTPUT_FOLDER_NAME: "",
+        SUBJECT: "",
+        SENDER_MAIL: "",
+        SENDER_NAME: "",
+        SENDER_TITLE: "",
+        STAKEHOLDERS_NAMES: "",
+        TEST_MODE: false,
+        COL_NAMES: "names",
+        PARAMETERS_URL: "",
+        FOLDER_ID: "",
+        FOLDER_URL: ""
+    }
+
+    var divMergeData;
+    var divParameters;
+    var divModal;
+    var lastButton;
+
+
+    function writeDiv(divId, html) {
+        let div = document.getElementById(divId);
+        if (div != undefined) {
+            div.innerHTML = html;
+        }
+        else {
+            console.log(`div ${divId} not found`);
+            console.log(html);
+        }
+
+    }
+
+    function onSuccessGetFileInfo(json) {
+        fi = JSON.parse(json);
+        console.log("onSuccessGetFileInfo()", fi);
+        if (fi != null && fi.url.length > 0) {
+            let fileData = "";
+            let dir = "";
+            if (fi.parentDirs.length > 0)
+                dir = fi.parentDirs[0];
+
+            let linkId = `LINK_${fi.controlId}`;
+            let folderId = `FOLDER_${fi.controlId}`;
+            let nameId = `NAME_${fi.controlId}`;
+            let inputId = `INPUT_${fi.controlId}`;
+            let dateId = `DATE_${fi.controlId}`;
+            console.log("date Modified", fi.dateModified);
+
+
+            let linkHtml = `<a href="${fi.url}">${fi.name}</a>`;
+            writeDiv(folderId,dir);
+            writeDiv(nameId,linkHtml);
+            writeDiv(dateId,moment(fi.dateModified).fromNow());
+
+            // let btn = `<button class="btn btn-secondary" onclick="openBrowser('${fi.url}')">${fi.controlText.replace("*", "")}</button>`;
+
+            // let lnk = `<a href="${fi.url}">[${fi.controlText.replace("*", "")}]</a>`;
+
+            // let div = document.getElementById(fi.controlId);
+            // if (div != undefined)
+            //     div.innerHTML = `${lnk}`;
+        }
+    }
+
+    function onSuccessGetFileInfo2(json) {
+        fi = JSON.parse(json);
+        console.log("onSuccessGetFileInfo2()", fi);
+        if (fi != null && fi.url.length > 0) {
+            let fileData = "";
+            let dir = "";
+            if (fi.parentDirs.length > 0)
+                dir = fi.parentDirs[0];
+
+            let linkId = `LINK_${fi.controlId}`;
+            let folderId = `FOLDER_${fi.controlId}`;
+            let nameId = `NAME_${fi.controlId}`;
+            let inputId = `INPUT_${fi.controlId}`;
+            let dateId = `DATE_${fi.controlId}`;
+
+            //writeDiv(linkId,`<a href="${fi.url}">${fi.controlText}</a>`);
+            writeDiv(folderId,dir);
+            writeDiv(nameId,fi.name);
+            writeDiv(dateId,moment(fi.dateModified).fromNow());
+            writeDiv("template",fi.content);
+            console.log("date Modified", fi.dateModified);
+
+
+
+
+            // let btn = `<button class="btn btn-secondary" onclick="showDiv("template",true);">${fi.controlText.replace("*", "")}</button>`;
+
+            // let lnk = `<a href="${fi.url}">[${fi.controlText.replace("*", "")}]</a>`;
+
+            //  div = document.getElementById(fi.controlId);
+            //   if (div != undefined)
+            //   div.innerHTML = `${btn}`;
+        }
+    }
+
+    function onCallback(json) {
+
+        try {
+            console.log("callback()", json);
+            let response = JSON.parse(json);
+            console.log("after process: response:");
+            console.log(response);
+            if (response.result == 200) {
+                //document.forms["myForm"].reset();
+                showMessage("Process finished execution");
+                if (response.html.length > 0) {
+                    let div = document.getElementById("result");
+                    div.innerHTML = response.html[0].value;
+                }
+            }
+            else if (response.result == 500) {
+            }
+        }
+        catch (ex) {
+            showError("Process was completed, but error showing results: " + ex.message);
+        }
+
+    }
+
+    function setValue(fieldId, value) {
+        var x = document.forms["myForm"][fieldId];
+        if (x != undefined)
+            x.value = value;
+
+    }
+
+    function getValue(fieldId) {
+        var x = document.forms["myForm"][fieldId];
+        if (x != undefined)
+            return "";
+        else return x.value;
+    }
+
+    function showDiv(divId, value) {
+        console.log("showdiv() " + divId);
+        let div = document.getElementById(divId);
+        if (div != undefined) {
+            if (value)
+                div.style.display = "block";
+            else
+                div.style.display = "none";
+        }
+        else console.log("div not found");
+    }
+
+    function toggleParameters() {
+        if (divParameters == undefined)
+            divParameters = document.getElementById("parameters");
+        if (divParameters.style.display === "none") {
+            divParameters.style.display = "block";
+        } else {
+            divParameters.style.display = "none";
+        }
+    }
+
+    function openParameters() {
+        if (pars.PARAMETERS_URL.length > 0)
+            window.open(pars.PARAMETERS_URL);
+    }
+
+    function openBrowser(url) {
+        console.log("openBrowser()");
+        console.log(url);
+        if (url.length > 0)
+            window.open(url);
+    }
+
+
+    function showTemplate() {
+        if (templateText.length > 0) {
+            let div = document.getElementById("result");
+            div.innerHTML = templateText;
+        }
+    }
+
+    function getTemplateText(labelId, text, fileName) {
+        if (fileName.toLowerCase().indexOf("http") == 0) {
+            if (fileName.length > 0) {
+                //onSuccessGetDataLink old Handler
+                google.script.run.withSuccessHandler(onSuccessGetFileInfo2)
+                    .getTemplateText(labelId, text, fileName);
+            }
+        }
+        else showError("Only urls are valid for files");
+    }
+
+    function getFileUrl(div, btnText, fileName) {
+        btnTitle = btnText;
+        if (fileName.length > 0) {
+            lastDiv = div;
+            if (fileName.toLowerCase().indexOf("http" == 0))
+                onSuccessGetDataLink(fileName);
+            else
+                google.script.run.withSuccessHandler(onSuccessGetDataLink).getUrl(fileName);
+        }
+
+    }
+
+    function loadColumnNames() {
+        google.script.run.withSuccessHandler(onSuccessGetColumnNames)
+            .getColumnNamesSelects();
+
+    }
+
+
+    function closeResults() {
+        showDiv("mainContent", true);
+        disableButtons(false);
+    }
+
+    function disableButtons(state) {
+        const buttons = document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].disabled = state;
+        };
+
+    }
+
+    function showMessage(msg) {
+        let div = document.getElementById("result");
+        div.innerHTML = `<h4 class="text-info">${msg}</h4`;
+    }
+
+    function showError(msg) {
+        let div = document.getElementById("result");
+        div.innerHTML = `<h4 class="text-danger">${msg}</h4`;
+    }
+
+
+    function getCurrentText(btn) {
+        let currentText = document.querySelector(`#${btn}`).innerHTML;
+        return currentText;
+    }
+
+    function setCurrentText(btn, text) {
+        document.querySelector(`#${btn}`).innerHTML = text;
+    }
+
+
+    function hideLabel(lbl) {
+            document.querySelector(`#${lbl}`).style.display = "none";
+        }
+
+
+    function changeButtonText(btn, text) {
+        let changed = false;
+        let currentText = document.querySelector(`#${btn}`).innerHTML;
+        if (currentText.toLowerCase().indexOf(text.toLowerCase()) < 0) {
+            currentText = `${text} ${currentText}`;
+            document.querySelector(`#${btn}`).innerHTML = currentText;
+            changed = true;
+        }
+        return changed;
+    }
+
+    function testMerge(btn) {
+        changeButtonText("btnExecute", "Execute");
+
+        console.log("testMerge", document.forms["myForm"]);
+        if (document.forms["myForm"].checkValidity()) {
+            if (!changeButtonText(btn, "Confirm ")) {
+                showMessage(`<h4 class="text-success'>Testing Mail Merge Process...</h4>`);
+                modalResponse = false;
+                setCurrentText("btnExecute", "Execute");
+
+                if (urlDataFile.length > 0)
+                    window.open(urlDataFile);
+
+                google.script.run.withFailureHandler(myFailureHandler).withSuccessHandler(onCallback).testMerge(document.forms["myForm"]);
+
+            }
+        }
+        else
+            showError("Some fields are required");
+
+    }
+
+    function myFailureHandler(error) {
+        console.log("myFailureHandler", error);
+    }
+
+    function processForm(btn) {
+        if (document.forms["myForm"].checkValidity()) {
+            if (!changeButtonText(btn, "Confirm ")) {
+
+                showMessage("Executing Mail Merge Process...");
+                disableButtons(true);
+                setCurrentText("btnExecute", "Execute");
+                showDiv("mainContent", false);
+                showDiv("template", false);
+
+                //if (urlDataFile.length > 0)
+                //    window.open(urlDataFile);
+
+                //google.script.run.withSuccessHandler(onCallback).processForm(document.forms["myForm"]);
+                google.script.run.withFailureHandler(myFailureHandler).withSuccessHandler(onCallback).processForm(document.forms["myForm"]);
+            }
+        }
+        else {
+            showError("Some fields are required");
+        }
+    }
+
+    //submit removed onsubmit="handleFormSubmit(this)
+    function handleFormSubmit(formObject) {
+        console.log("calling ProcessFOrm()", formObject);
+        disableButtons(true);
+
+        //if (urlDataFile.length > 0)
+        //    window.open(urlDataFile);
+
+        google.script.run.withSuccessHandler(onCallback).processForm(formObject);
+    }
+
+    function onSuccess(json) {
+        let pars = JSON.parse(json);
+
+        setValue("DATA_FILE_NAME", pars.DATA_FILE_NAME);
+        setValue("NAMES_FILE", pars.NAMES_FILE);
+        setValue("TEMPLATE_FILE_NAME", pars.TEMPLATE_FILE_NAME);
+        setValue("RESULT_TEMPLATE_FILE_NAME", pars.RESULT_TEMPLATE_FILE_NAME);
+        //setValue("OUTPUT_FOLDER_NAME", pars.OUTPUT_FOLDER_NAME);
+        setValue("SUBJECT", pars.SUBJECT);
+        //setValue("SENDER_MAIL", pars.SENDER_MAIL);
+        setValue("SENDER_NAME", pars.SENDER_NAME);
+        setValue("SENDER_TITLE", pars.SENDER_TITLE);
+        //setValue("STAKEHOLDERS_NAMES", pars.STAKEHOLDERS_NAMES);
+        setValue("COL_NAMES", pars.COL_NAMES);
+
+        //TODO: GET THE URL WHEN RETRIEVING PARAMETERS
+
+        getFileInfo("DF", "Data File *", pars.DATA_FILE_NAME);
+
+        getFileInfo('NF', 'Names File', pars.NAMES_FILE);
+
+        getTemplateText('TF', 'Template File *', pars.TEMPLATE_FILE_NAME);
+
+        let divLinkParameters = document.getElementById("LINK_PARAMETERS");
+        let html = `<a href="${pars.PARAMETERS_URL}">Edit Parameters File</a>`;
+        divLinkParameters.innerHTML = html;
+        showMessage("Fields with * are required.");
+
+    }
+
+
+    function getFileInfo(id, text, fileName) {
+        fileName = fileName.trim();
+        if (fileName.toLowerCase().indexOf("http") == 0) {
+            if (fileName.length > 0) {
+                google.script.run.withSuccessHandler(onSuccessGetFileInfo)
+                    .getFileInfo(id, text, fileName);
+            }
+        }
+        else showError("Only urls are valid for files");
+    }
+
+    function preventFormSubmit() {
+
+        //todo: disable for now
+        // var forms = document.querySelectorAll('form');
+        // for (var i = 0; i < forms.length; i++) {
+        //     forms[i].addEventListener('submit', function (event) {
+        //         event.preventDefault();
+        //     });
+        // }
+
+        google.script.run.withSuccessHandler(onSuccess)
+            .loadSettings();
+
+
+    }
+
+
+    //Main entry point
+    window.addEventListener('load', preventFormSubmit);
+    showDiv('LBL_DF',false);
+
+</script>
