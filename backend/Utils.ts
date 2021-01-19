@@ -22,21 +22,53 @@ export class Utils {
         return false;
     }
 
-    static getTimeStamp() {
-        return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH-mm-ss');
+    static getTimeStamp(dt: Date = null) {
+        if (dt == null)
+            dt = new Date();
+        return Utilities.formatDate(dt, Session.getScriptTimeZone(), 'yyyy-MM-dd HH-mm-ss');
     }
 
     static getDocTextByName(fileName): string {
         var text = "";
-        let doc = this.openDoc(fileName);
-        if ( doc != null )
-            text = doc.getBody().getText();
+
+        try {
+            let doc = this.openDoc(fileName);
+            if (doc != null)
+                text = doc.getBody().getText();
+        }
+        catch (ex) {
+            Logger.log(`getDocTextByName() Exception. fileName: ${fileName} ${ex.message}`);
+        }
         return text;
     }
 
+    //https://stackoverflow.com/questions/16840038/easiest-way-to-get-file-id-from-url-on-google-apps-script
+    static getIdFromUrl(url) {
+        return url.match(/[-\w]{25,}/);
+    }
 
-    static openSpreadSheet(ssName)
-    {
+    static getFileInfo(name) {
+        let fi = null;
+        let id = this.getIdFromUrl(name)
+        if ( id != null ) {
+            let file = DriveApp.getFileById(id);
+            if (file != undefined) {
+                fi = new FileInfo(file);
+                fi.nameUrl = name;
+            }
+        }
+        else
+        {
+            let fileInfos = Utils.getFilesByName(name);
+            if (fileInfos.length > 0) {
+                fi = fileInfos[0];
+            }            
+        }
+        return fi;
+    }
+
+
+    static openSpreadSheet(ssName) {
         let ss = null;
         try {
             if (ssName.toLowerCase().indexOf("http") >= 0) {
@@ -52,13 +84,12 @@ export class Utils {
         }
         catch (ex) {
             ss = null;
-        } 
-        return ss;       
+        }
+        return ss;
     }
 
 
-    static openDoc(docName)
-    {
+    static openDoc(docName) {
         let ss = null;
         try {
             if (docName.toLowerCase().indexOf("http") >= 0) {
@@ -74,16 +105,14 @@ export class Utils {
         }
         catch (ex) {
             ss = null;
-        } 
-        return ss;       
+        }
+        return ss;
     }
 
-    static getFilesByName(name:string)
-    {
+    static getFilesByName(name: string) {
         let fileInfos = new Array<FileInfo>();
         let files = DriveApp.getFilesByName(name);
-        while(files.hasNext())
-        {
+        while (files.hasNext()) {
             let file = files.next();
             //if ( !file.isTrashed)
             {
@@ -143,6 +172,18 @@ export class Utils {
             return file;
             break;
         }
+        return null;
+    }
+
+    static getFileFromRoot(name: string) {
+        let files: FileIterator;
+
+
+        files = DriveApp.getFilesByName(name);
+        if (files.hasNext()) {
+            return files.next();
+        }
+
         return null;
     }
 
@@ -252,17 +293,15 @@ export class Utils {
         let mails = to.split('\n');
         let mailsList = "";
 
-        if ( mails.length == 0 )
+        if (mails.length == 0)
             mailsList = to;
         else
-            for(var i =0; i<mails.length; i++)
-            {
+            for (var i = 0; i < mails.length; i++) {
                 mails[i] = mails[i].trim();
-                if ( mails[i].length > 0 )
-                {
-                    if ( mailsList.length == 0 )
+                if (mails[i].length > 0) {
+                    if (mailsList.length == 0)
                         mailsList = mails[i];
-                    else 
+                    else
                         mailsList = `${mailsList},${mails[i]}`;
                 }
             }
