@@ -1,0 +1,9 @@
+{ 
+    "compilerOptions": {
+      "allowJs": true,
+      "checkJs": true,
+      "types": ["google-apps-script"],
+      "experimentalDecorators": true,
+      "target": "es2019"
+      }
+}    
