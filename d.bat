@@ -1,0 +1,1 @@
+clasp deploy <y.txt
