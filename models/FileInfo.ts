@@ -1,12 +1,21 @@
+import { Utils } from "../backend/Utils";
+
 export class FileInfo{
     name:string;
+    nameUrl: string="";
     id: string;
     url: string;
-    description:string;
+    description:string="";
     dateCreated: Date;
     dateModified: Date;
+    //lastModified: string;
     parentDirs = new Array<string>();
     size: number;
+    type: string;
+    controlId: string;
+    controlText: string;
+    labelId: string;
+    content:string = "";
 
     constructor( file)
     {
