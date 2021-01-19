@@ -11,6 +11,7 @@ export class Service {
 
     mailListText = "";
     templateText = "";
+    grid: Array<Array<string>> = new Array<Array<string>>();
 
     saveParameters(sheet, p: P) {
         let grid = p.getGrid();
@@ -136,6 +137,14 @@ export class Service {
                 }
             }
         }
+        else if ( this.grid.length > 0 )
+        {
+            let row: Array<string[]> = this.grid.filter(x=>x[0]==name);
+            if ( row.length > 0 )
+            {
+                email = row[0][1];
+            }
+        }
         return email;
     }
 
@@ -226,6 +235,10 @@ export class Service {
     }
 
 
+    getTemplateText(fileName){
+       let text = Utils.getDocTextByName(fileName);        
+       return text;
+    }
 
     mailMerge(p: P):GSResponse {
         let folderName = p.getParameter(P.FOLDER_NAME);
@@ -285,6 +298,13 @@ export class Service {
                 P.StartCol = 1;
                 P.EndCol = lastColumn;
 
+            }
+            if (userColumns.length == 0 )
+            {
+                go = false;
+                response.messages.push("Data file is empty.");
+                response.domainResult = -3;
+               
             }
             Logger.log(`User:columns: ${userColumns}`);
             let arrUserColumns = userColumns.split(',');
@@ -387,8 +407,22 @@ export class Service {
 
             this.mailListText = Utils.getDocTextByName(mailListFileName).toLowerCase();
             this.templateText = Utils.getDocTextByName(templateFileName);
+            if ( this.mailListText.length == 0 )
+            {
+                let ssMailsList = Utils.openSpreadSheet(mailListFileName);
+                if ( ssMailsList != null )
+                {
+                    let rangeNL = sheet.getRange(1, 1, lastRow, lastColumn + newCols);
+                    let lcNL = rangeData.getLastColumn();
+                    let lrNL = rangeData.getLastRow();
+                    this.grid = rangeNL.getValues();                    
+                    go = go && true;
+                }
+            }
+            else
+                go = go && this.templateText.length > 0;
             Logger.log("template text length", this.templateText.length);
-            go = this.templateText.length > 0;
+            
 
 
             //verify columns
@@ -493,23 +527,23 @@ export class Service {
             if (r.TOTAL_LINES == r.OK_LINES && r.TOTAL_LINES > 0 && r.OK_LINES > 0) {
                 response.domainResult = 0;
                 r.OVERALL_RESULT = "SUCCESS: All lines and mails processed successfully";
-                let processedFolder = Utils.getCreateFolder(processedFolderName);
-                Logger.log(`Processed Folder:${processedFolderName}`);
+                //let processedFolder = Utils.getCreateFolder(processedFolderName);
+                //Logger.log(`Processed Folder:${processedFolderName}`);
 
-                r.PROCESSED_FILE_NAME = `${ssName}.Processed.${r.EXECUTION_TIME}`;
-                //Move file
-                Logger.log(`new name for data file:${r.PROCESSED_FILE_NAME}`);
-                let newFile = DriveApp.getFileById(ss.getId()).makeCopy(r.PROCESSED_FILE_NAME, processedFolder);
-                dataFileUrl = newFile.getUrl();
-                try {
-                    Logger.log("moving file to processed");
-                    Drive.Files.remove(ss.getId());
-                    Logger.log("file was moved");
-                }
-                catch (ex) {
-                    Logger.log(`error deleting data file: ${ex.message}`);
-                    response.messages.push(`Data file can not be deleted. ${ex.message}`);
-                }
+                // r.PROCESSED_FILE_NAME = `${ssName}.Processed.${r.EXECUTION_TIME}`;
+                // //Move file
+                // Logger.log(`new name for data file:${r.PROCESSED_FILE_NAME}`);
+                // let newFile = DriveApp.getFileById(ss.getId()).makeCopy(r.PROCESSED_FILE_NAME, processedFolder);
+                // dataFileUrl = newFile.getUrl();
+                // try {
+                //     Logger.log("moving file to processed");
+                //     Drive.Files.remove(ss.getId());
+                //     Logger.log("file was moved");
+                // }
+                // catch (ex) {
+                //     Logger.log(`error deleting data file: ${ex.message}`);
+                //     response.messages.push(`Data file can not be deleted. ${ex.message}`);
+                // }
             }
             else
             {
@@ -518,20 +552,19 @@ export class Service {
             }
             response.messages.push(r.OVERALL_RESULT);
 
-            let logSheet = Utils.getCreateSpreadSheet(folder, `${folderName}_Log`, "TimeStamp,Total Lines,OK Lines,Error Lines,Data File url");
-            let sheetLog = logSheet.getActiveSheet();
-            let row = r.getRow();
-            r.LOG_LINK = logSheet.getUrl();
-            sheetLog.appendRow(row);
+            // let logSheet = Utils.getCreateSpreadSheet(folder, `${folderName}_Log`, "TimeStamp,Total Lines,OK Lines,Error Lines,Data File url");
+            // let sheetLog = logSheet.getActiveSheet();
+            // let row = r.getRow();
+            // r.LOG_LINK = logSheet.getUrl();
+            // sheetLog.appendRow(row);
 
             r.TEST_MODE = P.testMode
         }
-        else
+        if ( !go )
+            response.messages.push("Mails NOT SENT due to some lines in error. Check Data File");
+        if ( this.templateText.length == 0)
         {
-            if ( !go )
-                response.messages.push("Mails NOT SENT due to some lines in error. Check Data File");
-            if ( this.templateText.length == 0)
-                response.messages.push("Template empty or file could not be read.");
+            response.messages.push("Template empty or file could not be read.");
             response.domainResult = -2;
         }
         html = this.resultReport(r);
@@ -553,6 +586,24 @@ export class Service {
         Logger.log("mailMerge() results:",response);
         return response;
     }
+
+    getFileInfos(dataFile,namesFile,templateFile)
+    {
+        let arr = new Array<FileInfo>();
+        let fi = Utils.getFileInfo(dataFile);
+        arr.push(fi);
+
+        fi = Utils.getFileInfo(namesFile);
+        arr.push(fi);
+
+        fi = this.getTemplateText(templateFile);
+        arr.push(fi);
+
+
+        return arr;
+        
+    }
+
 
 
 }
