@@ -95,7 +95,7 @@ export class P{
         this.addParameter("NAMES_FILE",formObject.NAMES_FILE);
         this.addParameter("TEMPLATE_FILE_NAME", formObject.TEMPLATE_FILE_NAME);
         //this.addParameter("RESULT_TEMPLATE_FILE_NAME",formObject.RESULT_TEMPLATE_FILE_NAME);
-        this.addParameter("OUTPUT_FOLDER_NAME", formObject.OUTPUT_FOLDER_NAME);
+        this.addParameter("OUTPUT_FOLDER_NAME", `${formObject.DATA_FILE_NAME}_Output`);
         this.addParameter("SUBJECT",formObject.SUBJECT);
         this.addParameter("SENDER_MAIL", formObject.SENDER_MAIL);
         this.addParameter("SENDER_TITLE",formObject.SENDER_TITLE);
