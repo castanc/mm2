@@ -60,6 +60,15 @@ function getUrl(fileName) {
     else return `{url:""}`;
 }
 
+function getFileInfo(id,text,fileName)
+{
+    let fi =Utils.getFileInfo(fileName);
+    fi.controlId = id;
+    fi.controlText = text;
+    return JSON.stringify(fi);
+
+}
+
 function getFileInfos(dataFile,namesFile,templateFile)
 {
     let sv = new Service();
@@ -146,24 +155,23 @@ function doGet(e) {
 }
 
 
-function getTemplateText(controlId, labelId, controlText, fileName)
+function getTemplateText(controlId, controlText, fileName)
 {
-    let result = null;
+    let result = new FileInfo(null);
     try {
         result = Utils.getFileInfo(fileName);
         if (result != null) {
             result.controlId = controlId;
             result.controlText = controlText;
-            result.labelId = labelId;
 ;
             let sv = new Service();
             result.content = sv.getTemplateText(fileName);
-            return JSON.stringify(result);
         }
     }
     catch (ex) {
-        return `{url: "" }`
+        Logger.log("getTemplateText() exception", ex.message);
     }
+    return JSON.stringify(result);
 
 }
 
