@@ -95,7 +95,9 @@
             writeDiv(nameId,fi.name);
             writeDiv(dateId,moment(fi.dateModified).fromNow());
             writeDiv("template",fi.content);
+            disableButtons(false);
             console.log("date Modified", fi.dateModified);
+
 
 
 
@@ -113,7 +115,7 @@
     function onCallback(json) {
 
         try {
-            console.log("callback()", json);
+            console.log("onCallback()", json);
             let response = JSON.parse(json);
             console.log("after process: response:");
             console.log(response);
@@ -143,7 +145,7 @@
 
     function getValue(fieldId) {
         var x = document.forms["myForm"][fieldId];
-        if (x != undefined)
+        if (x == undefined)
             return "";
         else return x.value;
     }
@@ -389,7 +391,7 @@
 
 
     //Main entry point
+    showDiv('template',false);
     window.addEventListener('load', preventFormSubmit);
-    showDiv('LBL_DF',false);
 
 </script>
