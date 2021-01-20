@@ -23,13 +23,13 @@
 
 <body>
     <div class="container">
-        <form id="myForm">
-            <p class="h4 mb-4 text-center">PWC Generic Mail Merge V2</p>
-            <!-- text-center removed-->
-            <div id="mainContent">
+        <div id="mainContent">
+            <form id="myForm">
+                <p class="h4 mb-4 text-center">PWC Mail Merge V2</p>
+                <!-- text-center removed-->
                 <div class="row">
                     <button id="btnExecute" type="button" class="btn btn-primary col-12"
-                        onclick="processForm('btnExecute')">Execute</button>
+                        onclick="processForm('btnExecute')" disabled>Execute</button>
                 </div>
                 <div class="row">
                     <div class="form-group col-1">File</div>
@@ -38,19 +38,6 @@
                     <div class="form-group col-2">Last Modified</div>
                     <div class="form-group col-4">Url *</div>
                 </div>
-                <!--
-                <div class="row">
-                    <div class="form-group col-1">File</div>
-                    <div class="form-group col-3">
-                        Folder: foldername</br>
-                        File: foldername</br>
-                        Modified:  1 hour ago</br>
-                    </div>
-                    <div class="form-group col-8">
-                        url of file
-                    </div>
-                </div>
-                -->
                 <div class="row">
                     <div class="form-group col-1">Data</div>
                     <div class="form-group col-3">
@@ -68,7 +55,6 @@
                                 onblur="getFileInfo('DF', 'Data File *', this.value)" placeholder="Google SHEET file"
                                 required>
                         </div>
-                            </div>
                     </div>
                 </div>
 
@@ -113,35 +99,39 @@
                 </div>
 
                 <div class="row">
-                    </br>
+                    <div class="form-group col-12">
+                        <label for="SUBJECT">Subject</label>
+                        <input type="text" class="form-control" id="SUBJECT" name="SUBJECT" required>
+
+                    </div>
                 </div>
                 <div class="row">
                     <div class="form-group col-3">
-                        <label for="SENDER_NAME">Who sends the mails</label>
+                        <label for="SENDER_NAME">Sender Name</label>
                         <input type="text" class="form-control" id="SENDER_NAME" name="SENDER_NAME">
-                        
+
                     </div>
                     <div class="form-group col-3">
-                        <label for="SENDER_TITLE">Title of mail's Sender</label>
+                        <label for="SENDER_TITLE">Sender Title</label>
                         <input type="text" class="form-control" id="SENDER_TITLE" name="SENDER_TITLE">
                     </div>
                     <div class="form-group col-3">
                         <label for="COL_NAMES">Name of 'Names' column *</label>
-                        <input type="text" class="form-control" id="COL_NAMES" name="COL_NAMES" disabled>
+                        <input type="text" class="form-control" id="COL_NAMES" name="COL_NAMES" required>
                     </div>
                     <div class="form-group col-3">
                         <div id="LINK_PARAMETERS" class="form-group"></div>
                     </div>
-
-           
                 </div>
+            </form>
+            <button data-toggle="collapse" data-target="#template" class="btn btn-secondary col-12">Template</button>
+            <div id="template" class="container h4 mb-4">
             </div>
-        </form>
-        <div id="result" class="h4 mb-4"></div>
-        <div id="messages" class="h4 mb-4 text-danger"></div>
-        <button data-toggle="collapse" data-target="#template" class="btn btn-secondary col-12">Template</button>
-        <div id="template" class="container h4 mb-4">
-        </div>
+            </div>
+    </div>
+    <div id="result" class="container h4 mb-4"></div>
+    <div id="messages" class="container h4 mb-4 text-danger"></div>
+    </div>
     </div>
 
     <div class="footer-wrapper flex-shrink-0 p-10 text-center bg-content">
