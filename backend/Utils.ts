@@ -1,6 +1,5 @@
 import { FileInfo } from "../Models/FileInfo";
 import { GSResponse } from "../Models/GSResponse";
-import { GSLog } from './GSLog'
 
 export class Utils {
 
@@ -272,7 +271,6 @@ export class Utils {
                 text = text.replace(value, newValue);
         }
         catch (ex) {
-            //return GSLog.handleException(ex, "Utils.replace()");
         }
         return text;
     }
@@ -292,7 +290,7 @@ export class Utils {
             }
         }
         catch (ex) {
-            return GSLog.handleException(ex, "Utils.replace()");
+            //return GSLog.handleException(ex, "Utils.replace()");
             //return text;
         }
         return word;
@@ -327,7 +325,6 @@ export class Utils {
                         mailsList = `${mailsList},${mails[i]}`;
                 }
             }
-        Logger.log("SendMail to " + mailsList);
 
         try {
             body = Utils.replace(body, "\\n", "</br>");
