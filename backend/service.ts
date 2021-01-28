@@ -1,17 +1,18 @@
 import { G } from './G';
 import { Utils } from './Utils';
 import { P } from '../Models/Parameters';
-import { GSLog } from './GSLog';
 import { MailValidation } from '../Models/MailValidation';
 import { R } from '../Models/R';
 import { FileInfo } from '../Models/FileInfo';
 import { GSResponse } from '../Models/GSResponse';
+import { SysLog } from './SysLog';
 
 export class Service {
 
     mailListText = "";
     templateText = "";
     grid: Array<Array<string>> = new Array<Array<string>>();
+
 
     saveParameters(sheet, p: P) {
         let grid = p.getGrid();
@@ -21,6 +22,19 @@ export class Service {
     }
 
 
+    saveTemplate(url,text)
+    {
+        let result = -1;
+        let doc = DocumentApp.openByUrl(url);
+        if ( doc != undefined )
+        {
+            var body = doc.getBody();
+            body.clear();
+            body.appendParagraph(text);
+            result = 0;
+        }
+        return result;
+    }
 
 
     getColumnNamesSelects() {
@@ -66,10 +80,10 @@ export class Service {
     getUrlDataFile(fileName: string): string {
         let ss = Utils.openSpreadSheet(fileName);
         let url = "";
-        if ( ss != null )
+        if (ss != null)
             url = ss.getUrl();;
 
-            //if (url.length == 0)
+        //if (url.length == 0)
         //    url = this.createDataFile(fileName);
 
         return url;
@@ -139,21 +153,21 @@ export class Service {
                 }
             }
         }
-        else if ( this.grid.length > 0 )
-        {
-            let row: Array<string[]> = this.grid.filter(x=>x[0]==name);
-            if ( row.length > 0 )
-            {
-                email = row[0][1];
-            }
-        }
-        return email;
+        // else if ( this.grid.length > 0 )
+        // {
+        //     let row: Array<string[]> = this.grid.filter(x=>x[0]==name);
+        //     if ( row.length > 0 )
+        //     {
+        //         email = row[0][1];
+        //     }
+        // }
+        return email.trim();
     }
 
 
     validateNames(names: string): MailValidation {
         let mv = new MailValidation();
-        mv.result = true;   //(list.length == mv.mails.length);
+        mv.result = false;   //(list.length == mv.mails.length);
 
         let list = names.split('\n');
         let mail = "";
@@ -173,6 +187,7 @@ export class Service {
                         mv.mails.push(mail);
                         mv.validMails = `${mv.validMails}\n${mail}`;
                         mv.names = `${mv.names}\n${list[i]}`;
+                        mv.result = true;
                     }
                     else {
                         mv.error = "Invalid Mail";
@@ -184,13 +199,7 @@ export class Service {
                 else {
                     mv.mails.push(list[i]);
                     mv.validMails = `${mv.validMails}\n${list[i]}`;
-                    mv.names = `${mv.names}\n${Utils.getNameFromEmail(list[i])}`;
-                    
-
-                    //todo: needs to enable directory api
-                    //var user = AdminDirectory.Users.get(list[i]);
-                    //Logger.log('User data:\n%s', JSON.stringify(user, null, 2));
-
+                    mv.result = true;
                 }
 
             }
@@ -199,8 +208,7 @@ export class Service {
 
     }
 
-    resultReport(r:R):string
-    {
+    resultReport(r: R): string {
         let html = `
           <div id='body'>
             <p class='colored'><b>Subject: Mail Merge Execution Report</b></p>
@@ -230,6 +238,14 @@ export class Service {
                 <td>${r.ERROR_LINES}</td>
             </tr>
             <tr>
+            <td>Mail Effectively Sent:</td>
+            <td>${r.MAILS_SENT}</td>
+        </tr>       
+        <tr>
+        <td>Mail FAILED:</td>
+        <td>${r.MAILS_FAILED}</td>
+    </tr>         
+            <tr>
                 <td>Messages:</td>
                 <td></td>
             </tr>
@@ -240,12 +256,12 @@ export class Service {
     }
 
 
-    getTemplateText(fileName){
-       let text = Utils.getDocTextByName(fileName);        
-       return text;
+    getTemplateText(fileName) {
+        let text = Utils.getDocTextByName(fileName);
+        return text;
     }
 
-    mailMerge(p: P):GSResponse {
+    mailMerge(p: P): GSResponse {
         let folderName = p.getParameter(P.FOLDER_NAME);
         let processedFolderName = `${folderName}_Output`;
         let dataFileUrl = "";
@@ -283,6 +299,8 @@ export class Service {
         let html = "";
 
         r.EXECUTION_TIME = Utils.getTimeStamp();
+        SysLog.log(`XXXXXXXXXXXXXXXXXXXX   namesCol: ${p.getParameter(P.COL_NAMES)}`);
+        SysLog.log(`XXXXXXXXXXXXXXXXXXXX   namesCol: ${p.getParameter(P.COL_NAMES)}`);
         let ss = Utils.openSpreadSheet(ssName);
         if (ss != null) {
             dataFileUrl = ss.getUrl();
@@ -304,14 +322,13 @@ export class Service {
                 P.EndCol = lastColumn;
 
             }
-            if (userColumns.length == 0 )
-            {
+            if (userColumns.length == 0) {
                 go = false;
                 response.messages.push("Data file is empty.");
                 response.domainResult = -3;
-               
+
             }
-            Logger.log(`User:columns: ${userColumns}`);
+            SysLog.log(`User:columns: ${userColumns}`);
             let arrUserColumns = userColumns.split(',');
             userColumns = `,${userColumns},`;
             let arrMissingColumns = new Array<string>();
@@ -327,7 +344,7 @@ export class Service {
 
             //todo: find namesColumn
             if (arrMissingColumns.length == arrFixedColumns.length) {
-                Logger.log("Sheet has no standard MM columns");
+                SysLog.log("Sheet has no standard MM columns");
                 rangeData = sheet.getRange(1, 1, lastRow, lastColumn + newCols);
                 newLastCol = rangeData.getLastColumn();
                 maxCols = sheet.getMaxColumns();
@@ -356,6 +373,19 @@ export class Service {
                     i++;
                 }
 
+                SysLog.log(`
+                NAMES COLUMN:${namesColumn}
+                COL_INVALID_MAILS:${P.COLN_INVALID_MAILS}
+                COL_INVALID_NAMES:${P.COLN_INVALID_NAMES}
+                NAMES_COL:${P.COLN_NAMES}
+                COL_RESOLVED_MAIL:${P.COLN_RESOLVED_MAIL}
+                COL_RESULT:${P.COLN_RESULT}
+                COL_STATUS:${P.COLN_STATUS}
+                COL_TIMESTAMP:${P.COLN_TIMESTAMP}
+                START_COL: ${P.StartCol}
+                END_COL:${P.EndCol}`);
+
+
                 if (newLastCol > lastColumn) {
                     lastColumn = newLastCol;
                     let found = false;
@@ -371,33 +401,32 @@ export class Service {
                         P.COLN_NAMES = lastColumn;
                         P.EndCol = lastColumn;
                         P.StartCol = lastColumn;
-                        Logger.log(`Names column ${namesColumn} NOT FOUND suer columns. COLN_NAMES: ${P.COLN_NAMES}`);
+                        SysLog.log(`Names column ${namesColumn} NOT FOUND suer columns. COLN_NAMES: ${P.COLN_NAMES}`);
                     }
                 }
             }
-            if ( arrMissingColumns.length == 0 )
-            {
-                Logger.log("data file has already fixed columns. Searching...");
-                for (j = 1; j <= lastColumn; j++) {
-                    colName=rangeData.getCell(1, j).getValue();
+            SysLog.log(`validating columns line 402. namesCol:${namesColumn}`);
+            for (j = 1; j <= lastColumn; j++) {
+                colName = rangeData.getCell(1, j).getValue().trim();
+                SysLog.log(`${j} colName: ${colName}`);
 
-                    if (colName == P.COL_INVALID_MAILS)
-                        P.COLN_INVALID_MAILS = j;
-                    else if (colName == P.COL_INVALID_NAMES)
-                        P.COLN_INVALID_NAMES = j;
-                    else if (colName == namesColumn)
-                        P.COLN_NAMES = j;
-                    else if (colName == P.COL_RESOLVED_MAIL)
-                        P.COLN_RESOLVED_MAIL = j;
-                    else if (colName == P.COL_RESULT)
-                        P.COLN_RESULT = j;
-                    else if (colName == P.COL_STATUS)
-                        P.COLN_STATUS = j;
-                    else if (colName == P.COL_TIMESTAMP)
-                        P.COLN_TIMESTAMP = j;
-                }                
+                if (colName == P.COL_INVALID_MAILS)
+                    P.COLN_INVALID_MAILS = j;
+                else if (colName == P.COL_INVALID_NAMES)
+                    P.COLN_INVALID_NAMES = j;
+                else if (colName == namesColumn)
+                    P.COLN_NAMES = j;
+                else if (colName == P.COL_RESOLVED_MAIL)
+                    P.COLN_RESOLVED_MAIL = j;
+                else if (colName == P.COL_RESULT)
+                    P.COLN_RESULT = j;
+                else if (colName == P.COL_STATUS)
+                    P.COLN_STATUS = j;
+                else if (colName == P.COL_TIMESTAMP)
+                    P.COLN_TIMESTAMP = j;
             }
-            Logger.log(`
+            SysLog.log(`
+            NAMES COLUMN:${namesColumn}
             COL_INVALID_MAILS:${P.COLN_INVALID_MAILS}
             COL_INVALID_NAMES:${P.COLN_INVALID_NAMES}
             NAMES_COL:${P.COLN_NAMES}
@@ -408,32 +437,30 @@ export class Service {
             START_COL: ${P.StartCol}
             END_COL:${P.EndCol}`);
 
+
             r.TEMPLATE_FILE_NAME = templateFileName;
 
             this.mailListText = Utils.getDocTextByName(mailListFileName).toLowerCase();
             this.templateText = Utils.getDocTextByName(templateFileName);
-            if ( this.mailListText.length == 0 )
-            {
+            if (this.mailListText.length == 0) {
                 let ssMailsList = Utils.openSpreadSheet(mailListFileName);
-                if ( ssMailsList != null )
-                {
+                if (ssMailsList != null) {
                     let rangeNL = sheet.getRange(1, 1, lastRow, lastColumn + newCols);
                     let lcNL = rangeData.getLastColumn();
                     let lrNL = rangeData.getLastRow();
-                    this.grid = rangeNL.getValues();                    
+                    this.grid = rangeNL.getValues();
                     go = go && true;
                 }
             }
             else
                 go = go && this.templateText.length > 0;
-            Logger.log("template text length", this.templateText.length);
-            
+
 
 
             //verify columns
 
             //validate mails
-            Logger.log("Validating mails ***********************************");
+            SysLog.log("Validating mails ***********************************");
             for (i = 2; i <= lastRow; i++) {
                 if (rangeData.getCell(i, P.COLN_STATUS).getValue() != "OK") {
 
@@ -442,10 +469,10 @@ export class Service {
                     rangeData.getCell(i, P.COLN_RESULT).setValue("");
                     rangeData.getCell(i, P.COLN_INVALID_NAMES).setValue("");
                     rangeData.getCell(i, P.COLN_INVALID_MAILS).setValue("");
+                    rangeData.getCell(i, P.COLN_TIMESTAMP).setValue(Utils.getTimeStamp());
 
                     let names = rangeData.getCell(i, P.COLN_NAMES).getValue();
                     mv = this.validateNames(names);
-                    Logger.log(`${i} ${mv.result} ${names} result:${mv.error}`);
                     r.VALID_MAILS += mv.mails.length;
                     r.INVALID_EMAILS += mv.totalInvalidMails;
                     r.NOT_FOUND_NAMES += mv.totalInvalidNames;
@@ -462,25 +489,24 @@ export class Service {
                         rangeData.getCell(i, P.COLN_INVALID_MAILS).setValue(mv.invalidMails);
                         r.ERROR_LINES++;
                         go = false;
+                        SysLog.log(`${i} ${mv.result} names: ${names} error:[${mv.error}]`);
                     }
                 }
             }
         }
-        else
-        {
+        else {
             response.messages.push(`Data file [${ssName}] not found.`);
             response.domainResult = -1;
         }
 
         //send mails
+        SysLog.log(`finished validating mail. GO:${go} testMOde: ${P.testMode}`);
+        SysLog.log(`OK Lines: ${r.OK_LINES} Error Lines: ${r.ERROR_LINES}`);
+        go = (r.ERROR_LINES == 0);
+        SysLog.log(`Startiong sending mails. GO:${go} testMOde: ${P.testMode}`);
+
         if (go) {
             subject = p.getParameter(P.SUBJECT);
-            // for (j = P.StartCol - 1; j <= P.EndCol; j++) {
-            //     colName = rangeData.getCell(1, j).getValue();
-            //     colName = colName.toUpperCase().trim();
-            //     cols.push(colName);
-            // }
-
             let lb = '{';
             let eb = '}';
             for (i = 2; i <= lastRow; i++) {
@@ -488,10 +514,10 @@ export class Service {
                 if (rangeData.getCell(i, P.COLN_STATUS).getValue() == "") {
                     mailText = this.templateText;
                     for (j = P.StartCol; j <= P.EndCol; j++) {
-                        //todo: when read from cols array returns udnefinde
-                        colName = rangeData.getCell(1, j).getValue();
-                        colName = colName.toUpperCase().trim();
+
+                        colName = rangeData.getCell(1, j).getValue().trim().toUpperCase();
                         mailText = Utils.replace(mailText, `$${lb}${colName}${eb}`, rangeData.getCell(i, j).getValue());
+
                     }
                     let index = mailText.indexOf("${");
                     while (index > 0) {
@@ -504,8 +530,9 @@ export class Service {
                     }
                     //todo: look for not resolved variables pointing to parameters
                     let result = 0;
+                    let sendTo = rangeData.getCell(i, P.COLN_RESOLVED_MAIL).getValue();
                     if (!P.testMode) {
-                        result = Utils.sendMail(rangeData.getCell(i, P.COLN_RESOLVED_MAIL).getValue(), subject, mailText);
+                        result = Utils.sendMail(sendTo, subject, mailText);
                         if (result == 0) {
                             rangeData.getCell(i, P.COLN_STATUS).setValue("OK");
                             r.MAILS_SENT++;
@@ -514,6 +541,8 @@ export class Service {
                             rangeData.getCell(i, P.COLN_STATUS).setValue("ERROR");
                             rangeData.getCell(i, P.COLN_RESULT).setValue(`Error sending mail\n${Utils.ex.message}`);
                             r.MAILS_FAILED++;
+                            SysLog.log(`${i} Error sending mail to: ${sendTo}\n${Utils.ex.message}`)
+
                         }
                     }
                     else {
@@ -526,32 +555,36 @@ export class Service {
                 }
             }
 
-            Logger.log("Finishing process");
+            SysLog.log("Finishing process");
 
             r.PROCESSED_FILE_NAME = ssName;
             if (r.TOTAL_LINES == r.OK_LINES && r.TOTAL_LINES > 0 && r.OK_LINES > 0) {
                 response.domainResult = 0;
-                r.OVERALL_RESULT = "SUCCESS: All lines and mails processed successfully";
+                if (r.MAILS_FAILED > 0) {
+                    response.messages.push("Some mails were not sent.");
+                }
+                else
+                    r.OVERALL_RESULT = "SUCCESS: All lines and mails processed successfully";
+
                 //let processedFolder = Utils.getCreateFolder(processedFolderName);
-                //Logger.log(`Processed Folder:${processedFolderName}`);
+                //SysLog.log(`Processed Folder:${processedFolderName}`);
 
                 // r.PROCESSED_FILE_NAME = `${ssName}.Processed.${r.EXECUTION_TIME}`;
                 // //Move file
-                // Logger.log(`new name for data file:${r.PROCESSED_FILE_NAME}`);
+                // SysLog.log(`new name for data file:${r.PROCESSED_FILE_NAME}`);
                 // let newFile = DriveApp.getFileById(ss.getId()).makeCopy(r.PROCESSED_FILE_NAME, processedFolder);
                 // dataFileUrl = newFile.getUrl();
                 // try {
-                //     Logger.log("moving file to processed");
+                //     SysLog.log("moving file to processed");
                 //     Drive.Files.remove(ss.getId());
-                //     Logger.log("file was moved");
+                //     SysLog.log("file was moved");
                 // }
                 // catch (ex) {
-                //     Logger.log(`error deleting data file: ${ex.message}`);
+                //     SysLog.log(`error deleting data file: ${ex.message}`);
                 //     response.messages.push(`Data file can not be deleted. ${ex.message}`);
                 // }
             }
-            else
-            {
+            else {
                 response.domainResult = -1;
                 r.OVERALL_RESULT = "ERROR. Some lines not processed.";
             }
@@ -565,35 +598,31 @@ export class Service {
 
             r.TEST_MODE = P.testMode
         }
-        if ( !go )
+        if (!go)
             response.messages.push("Mails NOT SENT due to some lines in error. Check Data File");
-        if ( this.templateText.length == 0)
-        {
+        if (this.templateText.length == 0) {
             response.messages.push("Template empty or file could not be read.");
             response.domainResult = -2;
         }
         html = this.resultReport(r);
-        if ( response.messages.length > 0 )
-        {
+        if (response.messages.length > 0) {
             let msgs = "";
             let color = "txt-info";
-            if ( response.domainResult != 0 )
+            if (response.domainResult != 0)
                 color = "txt-danger";
-            for(i=0;i<response.messages.length;i++)
-            {
+            for (i = 0; i < response.messages.length; i++) {
                 msgs = `${msgs}<tr><td></td><td><p class="${color}">${response.messages[i]}</p></td></tr>`
             }
-            html = html.replace("<!--MESSAGES!-->",msgs);
+            html = html.replace("<!--MESSAGES!-->", msgs);
         }
-        else html = html.replace("<!--MESSAGES!-->","");
+        else html = html.replace("<!--MESSAGES!-->", "");
 
-        response.addHtml("result",html);
-        Logger.log("mailMerge() results:",response);
+        response.addHtml("result", html);
+        SysLog.log("mailMerge() results:", JSON.stringify(response));
         return response;
     }
 
-    getFileInfos(dataFile,namesFile,templateFile)
-    {
+    getFileInfos(dataFile, namesFile, templateFile) {
         let arr = new Array<FileInfo>();
         let fi = Utils.getFileInfo(dataFile);
         arr.push(fi);
@@ -601,12 +630,12 @@ export class Service {
         fi = Utils.getFileInfo(namesFile);
         arr.push(fi);
 
-        fi = this.getTemplateText(templateFile);
+        fi.content = this.getTemplateText(templateFile);
         arr.push(fi);
 
 
         return arr;
-        
+
     }
 
 
