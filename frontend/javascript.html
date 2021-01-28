@@ -29,6 +29,13 @@
     var divParameters;
     var divModal;
     var lastButton;
+    var showTemplateText = false;
+    var showTemplateTextEditor = false;
+    var editBodyOnly = false;
+    var originalTemplate = "";
+    var templateUrl = "";
+    var hideStyle = false;
+    var styleText = "";
 
 
     function writeDiv(divId, html) {
@@ -38,14 +45,30 @@
         }
         else {
             console.log(`div ${divId} not found`);
-            console.log(html);
         }
 
     }
 
+    function setValue(idControl, value) {
+        console.log("setValue()",idControl,"len:", value.length);
+        let control = document.getElementById(idControl);
+        if (control != undefined) {
+            control.value = value;
+        }
+        else console.log("SetValue control not found ",idControl);
+    }
+
+    function getValue(idControl) {
+        let control = document.getElementById(idControl);
+        if (control != undefined) {
+            return control.value;
+        }
+        else return undefined;
+    }
+
     function onSuccessGetFileInfo(json) {
+        showDiv("spinner", false);
         fi = JSON.parse(json);
-        console.log("onSuccessGetFileInfo()", fi);
         if (fi != null && fi.url.length > 0) {
             let fileData = "";
             let dir = "";
@@ -61,9 +84,9 @@
 
 
             let linkHtml = `<a href="${fi.url}">${fi.name}</a>`;
-            writeDiv(folderId,dir);
-            writeDiv(nameId,linkHtml);
-            writeDiv(dateId,moment(fi.dateModified).fromNow());
+            writeDiv(folderId, dir);
+            writeDiv(nameId, linkHtml);
+            writeDiv(dateId, moment(fi.dateModified).fromNow());
 
             // let btn = `<button class="btn btn-secondary" onclick="openBrowser('${fi.url}')">${fi.controlText.replace("*", "")}</button>`;
 
@@ -75,9 +98,104 @@
         }
     }
 
+    function replace(text, value, newValue) {
+        try {
+            while (text.indexOf(value) >= 0)
+                text = text.replace(value, newValue);
+        }
+        catch (ex) {
+        }
+        return text;
+    }
+
+    function saveTemplate() {
+        console.log("SaveTemplate()");
+        let newTemplate = "";
+        let firstPart = "";
+        if (bodyOnly) {
+            let index = originalTemplate.toLowerCase().indexOf("<body");
+            if (index > 0)
+                firstPart = originalTemplate.substring(0, index);
+        }
+        newTemplate = `${firstPart}${getValue("TEMPLATE_EDITOR")}`;
+        
+        if ( hideStyle )
+            newTemplate = newTemplate.replace("<!--style text-->",styleText );
+
+        if (originalTemplate != newTemplate) {
+            console.log("saving new template");
+            textarea.value = newTemplate;
+            showDiv("spinner", true);
+            google.script.run.withSuccessHandler(onSucessSaveTemplate)
+                .saveTemplate(templateUrl, newTemplate);
+        }
+        else {
+            //error
+        }
+
+    }
+    function cancelTemplate() {
+        loadTemplateText(originalTemplate);
+        toggleTemplateEditor();
+    }
+
+    function loadTemplateText(text) {
+        templateText = text;
+        console.log("loadTemplateText. len:", text.length);
+        //setValue("TEMPLATE_EDITOR",text);
+        let textarea = document.getElementById("TEMPLATE_EDITOR");
+        if ( textarea != undefined )
+        {
+            console.log("TEXT AREA FOUND");
+            textarea.value = text;
+        }
+        else console.log( "CANT SET TEXTAREA TEMPLATE TEXT");
+    }
+
+
+    function onSucessSaveTemplate(json) {
+        showDiv("spinner", false);
+        let response = JSON.parse(json);
+        console.log(response);
+        if (response.result == 200) {
+            if (response.domainResult == 0) {
+                showMessage(response.message);
+                getTemplateText('TF', 'Template File *', templateUrl);
+                toggleTemplateEditor();
+            }
+            else
+                showError(response.message);
+        }
+        else {
+            showError(`Server error ${response.result} ${response.message}`);
+        }
+    }
+
+
+    function extract(text, start, end) {
+        let word = "";
+        try {
+            let index = text.indexOf(start);
+            let index2 = 0;
+            while (index >= 0) {
+                index += start.length;
+                index2 = text.indexOf(end, index);
+                if (index2 > index) {
+                    word = text.substr(index, index2 - index);
+                }
+                index = text.indexOf(start, index2 + end.length);
+            }
+        }
+        catch (ex) {
+            //return GSLog.handleException(ex, "Utils.replace()");
+            //return text;
+        }
+        return word;
+    }
+
     function onSuccessGetFileInfo2(json) {
+        showDiv("spinner", false);
         fi = JSON.parse(json);
-        console.log("onSuccessGetFileInfo2()", fi);
         if (fi != null && fi.url.length > 0) {
             let fileData = "";
             let dir = "";
@@ -90,32 +208,23 @@
             let inputId = `INPUT_${fi.controlId}`;
             let dateId = `DATE_${fi.controlId}`;
 
-            //writeDiv(linkId,`<a href="${fi.url}">${fi.controlText}</a>`);
-            writeDiv(folderId,dir);
-            writeDiv(nameId,fi.name);
-            writeDiv(dateId,moment(fi.dateModified).fromNow());
-            writeDiv("template",fi.content);
+            writeDiv(folderId, dir);
+            writeDiv(nameId, fi.name);
+            templateUrl = fi.url;
+            console.log("template url", templateUrl);
+            writeDiv(dateId, moment(fi.dateModified).fromNow());
+            writeDiv("template", fi.content);
+            originalTemplate = fi.content;
+            loadTemplateText(fi.content);
             disableButtons(false);
-            console.log("date Modified", fi.dateModified);
-
-
-
-
-
-            // let btn = `<button class="btn btn-secondary" onclick="showDiv("template",true);">${fi.controlText.replace("*", "")}</button>`;
-
-            // let lnk = `<a href="${fi.url}">[${fi.controlText.replace("*", "")}]</a>`;
-
-            //  div = document.getElementById(fi.controlId);
-            //   if (div != undefined)
-            //   div.innerHTML = `${btn}`;
         }
+        showDiv("templateZone", true);
+
     }
 
     function onCallback(json) {
-
+        showDiv("spinner", false);
         try {
-            console.log("onCallback()", json);
             let response = JSON.parse(json);
             console.log("after process: response:");
             console.log(response);
@@ -151,7 +260,6 @@
     }
 
     function showDiv(divId, value) {
-        console.log("showdiv() " + divId);
         let div = document.getElementById(divId);
         if (div != undefined) {
             if (value)
@@ -162,15 +270,20 @@
         else console.log("div not found");
     }
 
-    function toggleParameters() {
-        if (divParameters == undefined)
-            divParameters = document.getElementById("parameters");
-        if (divParameters.style.display === "none") {
-            divParameters.style.display = "block";
-        } else {
-            divParameters.style.display = "none";
-        }
+
+    function toggleTemplate() {
+        showTemplateText = !showTemplateText;
+        showDiv("template", showTemplateText);
+        showDiv("myForm",!showTemplateText);
     }
+
+    function toggleTemplateEditor() {
+     showTemplateTextEditor = ! showTemplateTextEditor;
+        showDiv("templateEdit", showTemplateTextEditor);
+        showDiv("myForm",!showTemplateTextEditor);
+    }
+
+
 
     function openParameters() {
         if (pars.PARAMETERS_URL.length > 0)
@@ -196,6 +309,7 @@
         if (fileName.toLowerCase().indexOf("http") == 0) {
             if (fileName.length > 0) {
                 //onSuccessGetDataLink old Handler
+                showDiv("spinner", true);
                 google.script.run.withSuccessHandler(onSuccessGetFileInfo2)
                     .getTemplateText(labelId, text, fileName);
             }
@@ -209,8 +323,9 @@
             lastDiv = div;
             if (fileName.toLowerCase().indexOf("http" == 0))
                 onSuccessGetDataLink(fileName);
-            else
+            else {
                 google.script.run.withSuccessHandler(onSuccessGetDataLink).getUrl(fileName);
+            }
         }
 
     }
@@ -257,8 +372,8 @@
 
 
     function hideLabel(lbl) {
-            document.querySelector(`#${lbl}`).style.display = "none";
-        }
+        document.querySelector(`#${lbl}`).style.display = "none";
+    }
 
 
     function changeButtonText(btn, text) {
@@ -285,6 +400,7 @@
                 if (urlDataFile.length > 0)
                     window.open(urlDataFile);
 
+                showDiv("spinner", true);
                 google.script.run.withFailureHandler(myFailureHandler).withSuccessHandler(onCallback).testMerge(document.forms["myForm"]);
 
             }
@@ -295,6 +411,7 @@
     }
 
     function myFailureHandler(error) {
+        showDiv("spinner", false);
         console.log("myFailureHandler", error);
     }
 
@@ -312,6 +429,7 @@
                 //    window.open(urlDataFile);
 
                 //google.script.run.withSuccessHandler(onCallback).processForm(document.forms["myForm"]);
+                showDiv("spinner", true);
                 google.script.run.withFailureHandler(myFailureHandler).withSuccessHandler(onCallback).processForm(document.forms["myForm"]);
             }
         }
@@ -327,11 +445,12 @@
 
         //if (urlDataFile.length > 0)
         //    window.open(urlDataFile);
-
+        showDiv("spinner", true);
         google.script.run.withSuccessHandler(onCallback).processForm(formObject);
     }
 
     function onSuccess(json) {
+        showDiv("spinner", false);
         let pars = JSON.parse(json);
 
         setValue("DATA_FILE_NAME", pars.DATA_FILE_NAME);
@@ -355,9 +474,11 @@
         getTemplateText('TF', 'Template File *', pars.TEMPLATE_FILE_NAME);
 
         let divLinkParameters = document.getElementById("LINK_PARAMETERS");
-        let html = `<a href="${pars.PARAMETERS_URL}">Edit Parameters File</a>`;
+        let html = `<a href="${pars.PARAMETERS_URL}">Parameters</a>`;
         divLinkParameters.innerHTML = html;
-        showMessage("Fields with * are required.");
+
+
+        showMessage("All Fields are required.");
 
     }
 
@@ -366,11 +487,29 @@
         fileName = fileName.trim();
         if (fileName.toLowerCase().indexOf("http") == 0) {
             if (fileName.length > 0) {
+                showDiv("spinner", true);
                 google.script.run.withSuccessHandler(onSuccessGetFileInfo)
                     .getFileInfo(id, text, fileName);
             }
         }
         else showError("Only urls are valid for files");
+    }
+
+    function setCheck(controlId, value)
+    {
+        let chb = document.getElementById(controlId);
+        if ( chb != undefined )
+            chb.checked = value
+    }
+
+
+    function getCheck(controlId, value)
+    {
+        let chb = document.getElementById(controlId);
+        if ( chb != undefined )
+            return value;
+        
+        return false;
     }
 
     function preventFormSubmit() {
@@ -382,7 +521,8 @@
         //         event.preventDefault();
         //     });
         // }
-
+        disableButtons(true);
+        showDiv("spinner", true);
         google.script.run.withSuccessHandler(onSuccess)
             .loadSettings();
 
@@ -391,7 +531,7 @@
 
 
     //Main entry point
-    showDiv('template',false);
+    showDiv('template', false);
     window.addEventListener('load', preventFormSubmit);
 
 </script>
