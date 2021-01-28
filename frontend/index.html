@@ -28,8 +28,19 @@
                 <p class="h4 mb-4 text-center">PWC Mail Merge V2</p>
                 <!-- text-center removed-->
                 <div class="row">
-                    <button id="btnExecute" type="button" class="btn btn-primary col-12"
-                        onclick="processForm('btnExecute')" disabled>Execute</button>
+                    <div class="col-md-12">
+                        <button id="btnExecute" type="button" class="btn btn-primary btn-block"
+                            onclick="processForm('btnExecute')" disabled>Execute</button>
+                    </div>
+
+                    <div id ="spinner" class="spinner-border text-primary" 
+                    id="spinner" role="status"
+                    style="display:none;"> 
+                    <span class="sr-only">Loading...</span> 
+                </div> 
+                <div id="data"></div> 
+            
+
                 </div>
                 <div class="row">
                     <div class="form-group col-1">File</div>
@@ -99,39 +110,56 @@
                 </div>
 
                 <div class="row">
-                    <div class="form-group col-12">
-                        <label for="SUBJECT">Subject</label>
+                    <div class="form-group col-8">
+                        <label for="SUBJECT">Subject *</label>
                         <input type="text" class="form-control" id="SUBJECT" name="SUBJECT" required>
-
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="form-group col-3">
-                        <label for="SENDER_NAME">Sender Name</label>
-                        <input type="text" class="form-control" id="SENDER_NAME" name="SENDER_NAME">
-
-                    </div>
-                    <div class="form-group col-3">
-                        <label for="SENDER_TITLE">Sender Title</label>
-                        <input type="text" class="form-control" id="SENDER_TITLE" name="SENDER_TITLE">
                     </div>
                     <div class="form-group col-3">
                         <label for="COL_NAMES">Name of 'Names' column *</label>
                         <input type="text" class="form-control" id="COL_NAMES" name="COL_NAMES" required>
                     </div>
-                    <div class="form-group col-3">
+                    <div class="form-group col-1">
                         <div id="LINK_PARAMETERS" class="form-group"></div>
                     </div>
+
+                </div>
+                <div class="row">
                 </div>
             </form>
-            <button data-toggle="collapse" data-target="#template" class="btn btn-secondary col-12">Template</button>
-            <div id="template" class="container h4 mb-4">
+            <div id="templateZone" style="display:none;">
+                <button class="btn btn-secondary col-12" onclick="toggleTemplate()">
+                    View Template</button>
+
+                <div id="template" class="col-md-6" style="display:none;"></div>
+
+                <button id="btnEditTemplate" class="btn btn-secondary col-12" onclick="toggleTemplateEditor()">
+                    Edit Template</button>
+             <div class="row">
+                 <hr>
+             </div>
+                <div id="templateEdit" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-6"></div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-secondary btn-block" onclick="cancelTemplate()">Cancel Edit</button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary btn-block" onclick="saveTemplate()">Save</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <textarea id="TEMPLATE_EDITOR" name="TEMPLATE_EDITOR" 
+                            rows="40" wrap="soft"
+                            class="form-control"></textarea>
+                    </div>
+                    </div>
+
             </div>
-            </div>
+        </div>
+
     </div>
     <div id="result" class="container h4 mb-4"></div>
     <div id="messages" class="container h4 mb-4 text-danger"></div>
-    </div>
     </div>
 
     <div class="footer-wrapper flex-shrink-0 p-10 text-center bg-content">
